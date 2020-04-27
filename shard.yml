@@ -1,0 +1,47 @@
+name: staff-api
+version: 1.0.0
+
+dependencies:
+  action-controller:
+    github: spider-gazelle/action-controller
+    version: ~> 3.0
+
+  active-model:
+    github: spider-gazelle/active-model
+
+  # JSON Web Token support
+  jwt:
+    github: crystal-community/jwt
+
+  rethinkdb:
+    github: place-labs/crystal-rethinkdb
+
+  # ORM for RethinkDB built on active-model
+  rethinkdb-orm:
+    github: spider-gazelle/rethinkdb-orm
+
+  # Google Calendar integration
+  google:
+    github: PlaceOS/google
+
+  # PlaceOS API integration
+  placeos:
+    github: placeos/crystal-client
+    branch: master
+
+  promise:
+    github: spider-gazelle/promise
+
+development_dependencies:
+  ameba:
+    github: veelenga/ameba
+  webmock:
+    github: manastech/webmock.cr
+    branch: master
+  faker:
+    github: askn/faker
+
+# compile target
+targets:
+  app:
+    main: src/staff-api.cr
