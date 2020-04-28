@@ -40,3 +40,7 @@ HEADERS = HTTP::Headers{
   "Host"          => URI.parse(DOMAIN).host.as(String),
   "Authorization" => authentication[1]["Authorization"],
 }
+
+EventMetadata.migrator.drop_and_create
+Attendee.migrator.drop_and_create
+Guest.migrator.drop_and_create
