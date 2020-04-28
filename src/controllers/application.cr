@@ -29,6 +29,26 @@ abstract class Application < ActionController::Base
     response.headers["X-Request-ID"] = request_id
   end
 
+  def attending_guest(visitor : Attendee, guest : Guest?)
+    if guest
+      {% begin %}
+        {
+          {% for key in [:email, :name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous, :extension_data] %}
+            {{key.id}}: guest.{{key.id}},
+          {% end %}
+          checked_in:     visitor.checked_in,
+          visit_expected: visitor.visit_expected,
+        }
+      {% end %}
+    else
+      {
+        email:          visitor.email,
+        checked_in:     visitor.checked_in,
+        visit_expected: visitor.visit_expected,
+      }
+    end
+  end
+
   # Error Handlers
   ###########################################################################
 
@@ -84,7 +104,7 @@ abstract class Application < ActionController::Base
   end
 
   # 404 if resource not present
-  rescue_from RethinkORM::Error::DocumentNotFound do |error|
+  rescue_from Granite::Querying::NotFound do |error|
     Log.debug { error.message }
     head :not_found
   end

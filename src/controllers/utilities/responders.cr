@@ -2,10 +2,9 @@ require "http"
 
 module Utils::Responders
   # Shortcut to save a record and render a response
-  def save_and_respond(resource)
-    creation = resource.new_record?
+  def save_and_respond(resource, create = true)
     if resource.save
-      render json: resource, status: creation ? HTTP::Status::CREATED : HTTP::Status::OK
+      render json: resource, status: create ? HTTP::Status::CREATED : HTTP::Status::OK
     else
       render json: resource.errors.map(&.to_s), status: :unprocessable_entity
     end

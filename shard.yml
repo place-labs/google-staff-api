@@ -13,12 +13,11 @@ dependencies:
   jwt:
     github: crystal-community/jwt
 
-  rethinkdb:
-    github: place-labs/crystal-rethinkdb
+  granite:
+    github: amberframework/granite
 
-  # ORM for RethinkDB built on active-model
-  rethinkdb-orm:
-    github: spider-gazelle/rethinkdb-orm
+  pg:
+    github: will/crystal-pg
 
   # Google Calendar integration
   google:

@@ -1,6 +1,7 @@
 class Events < Application
   base "/api/staff/v1/events"
 
+  # TODO:: show deleted events
   def index
     args = CalendarPeriod.new(params)
     calendars = matching_calendar_ids
@@ -23,9 +24,9 @@ class Events < Application
     # Grab any existing eventmeta data
     metadatas = {} of String => EventMetadata
     metadata_ids = results.map { |(calendar_id, system, event)|
-      system.nil? ? nil : "meta-#{system.id}-#{event.id}"
+      system.nil? ? nil : "#{system.id}-#{event.id}"
     }.compact
-    EventMetadata.get_all(metadata_ids).each { |meta| metadatas[meta.event_id.not_nil!] = meta }
+    EventMetadata.where(:id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
 
     # return array of standardised events
     render json: results.map { |(calendar_id, system, event)|
@@ -55,7 +56,7 @@ class Events < Application
       event = get_event(event_id, cal_id)
       head(:not_found) unless event
 
-      metadata = EventMetadata.find("meta-#{system_id}-#{event_id}")
+      metadata = EventMetadata.find("#{system_id}-#{event_id}")
       render json: standard_event(cal_id, system, event, metadata)
     end
 
@@ -84,7 +85,7 @@ class Events < Application
       cal_id = system.email
       head(:not_found) unless cal_id
 
-      EventMetadata.find("meta-#{system_id}-#{event_id}").try &.destroy
+      EventMetadata.find("#{system_id}-#{event_id}").try &.destroy
       calendar = calendar_for # admin when no user passed
       calendar.delete(event_id, cal_id, notify_option)
 
@@ -110,48 +111,28 @@ class Events < Application
 
     # Grab the guest profiles if they exist
     guests = {} of String => Guest
-    guest_ids = visitors.map { |visitor| "guest-#{visitor.email}" }
-    Guest.get_all(guest_ids).each { |guest| guests[guest.email.not_nil!] = guest }
+    Guest.where(:id, :in, visitors.map(&.email)).each { |guest| guests[guest.id.not_nil!] = guest }
 
     # Merge the visitor data with guest profiles
-    visitors = visitors.map do |visitor|
-      attending_guest(visitor, guests[visitor.email]?)
-    end
-
-    response.headers["Content-Type"] = "application/json"
-    render(text: "[#{visitors.join(',')}]")
+    visitors = visitors.map { |visitor| attending_guest(visitor, guests[visitor.email]?) }
+    render json: visitors
   end
 
   post("/:id/guests/:guest_id/checkin", :guest_checkin) do
     event_id = route_params["id"]
-    guest_email = route_params["guest_id"]
+    guest_email = route_params["guest_id"].downcase
     checkin = (query_params["state"]? || "true") == "true"
 
-    attendee = Attendee.where(email: guest_email, event_id: event_id).first
+    attendee = Attendee.where(guest_id: guest_email, event_id: event_id).limit(1).map { |at| at }.first
     attendee.checked_in = checkin
     attendee.save!
 
-    response.headers["Content-Type"] = "application/json"
-    render text: attending_guest(attendee, attendee.guest_details)
+    render json: attending_guest(attendee, attendee.guest)
   end
 
-  def attending_guest(visitor, guest)
-    if guest
-      # Combine these:
-      guest_json = guest.to_json[0..-2]
-      visitor_json = {
-        checked_in:     visitor.checked_in,
-        visit_expected: visitor.visit_expected,
-      }.to_json[1..-1]
-      "#{guest_json},#{visitor_json}"
-    else
-      {
-        email:          visitor.email,
-        checked_in:     visitor.checked_in,
-        visit_expected: visitor.visit_expected,
-      }.to_json
-    end
-  end
+  # ============================================
+  #              Helper Methods
+  # ============================================
 
   def get_event(event_id, cal_id)
     calendar = calendar_for(user_token.user.email)
@@ -164,12 +145,12 @@ class Events < Application
 
   def standard_event(calendar_id, system, event, metadata)
     visitors = {} of String => Attendee
-    (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email.not_nil!] = vis }
+    (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email] = vis }
 
     # Grab the list of external visitors
     attendees = (event.attendees || NOP_G_ATTEND).map do |attendee|
-      email = attendee.email
-      if visitor = visitors[email]
+      email = attendee.email.downcase
+      if visitor = visitors[email]?
         {
           name:            attendee.displayName || email,
           email:           email,

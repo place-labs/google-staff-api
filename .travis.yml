@@ -1,4 +1,10 @@
 language: crystal
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database travis_test;' -U postgres
+env:
+  - PG_DATABASE_URL=postgresql://postgres@localhost/travis_test
 install:
   - shards install
 script:

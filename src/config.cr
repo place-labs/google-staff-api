@@ -4,8 +4,10 @@ require "active-model"
 require "./constants"
 
 # Application code
+require "granite/adapter/pg"
+Granite::Connections << Granite::Adapter::Pg.new(name: "pg", url: ENV["PG_DATABASE_URL"])
+
 require "./error"
-require "rethinkdb-orm"
 require "./controllers/application"
 require "./controllers/*"
 require "./models/*"

@@ -48,6 +48,10 @@ shards:
     github: PlaceOS/google
     version: 1.0.3
 
+  granite:
+    github: amberframework/granite
+    version: 0.20.0
+
   habitat:
     github: luckyframework/habitat
     version: 0.4.3
@@ -62,7 +66,7 @@ shards:
 
   models:
     github: placeos/models
-    version: 1.0.3
+    version: 1.0.4
 
   neuroplastic:
     github: spider-gazelle/neuroplastic
@@ -71,6 +75,10 @@ shards:
   openssl_ext:
     github: stakach/openssl_ext
     version: 1.2.0
+
+  pg:
+    github: will/crystal-pg
+    version: 0.21.0
 
   placeos:
     github: placeos/crystal-client

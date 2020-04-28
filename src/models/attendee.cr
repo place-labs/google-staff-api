@@ -1,23 +1,16 @@
-require "rethinkdb-orm"
+require "./event_metadata"
+require "./guest"
 
-class Attendee < RethinkORM::Base
-  include RethinkORM::Timestamps
+class Attendee < Granite::Base
+  connection pg
+  table attendee
 
-  table :attendee
+  column id : Int64, primary: true, auto: true
 
-  attribute email : String
-  attribute event_id : String
-  attribute checked_in : Bool = false
-  attribute visit_expected : Bool = true
+  belongs_to event : EventMetadata, primary_key: "id"
+  belongs_to guest : Guest, primary_key: "email", foreign_key: email : String
 
-  belongs_to EventMetadata, foreign_key: "metadata_id"
-  validates :metadata_id, presence: true
-
-  ensure_unique :email, scope: [:metadata_id, :email] do |system_id, event_id|
-    {metadata_id, email}
-  end
-
-  def guest_details
-    Guest.find("guest-#{self.email}")
-  end
+  column checked_in : Bool = false
+  column visit_expected : Bool = true
+  timestamps
 end

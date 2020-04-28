@@ -1,32 +1,50 @@
-require "rethinkdb-orm"
+require "./attendee"
 
-class Guest < RethinkORM::Base
-  include RethinkORM::Timestamps
+class Guest < Granite::Base
+  connection pg
+  table guest
 
-  table :guest
+  EMPTY_JSON = JSON.parse("{}")
+
+  def id
+    self.email
+  end
 
   # A guest can have multiple entries with different emails
   # Profiles are limited to a single email
-  attribute email : String, mass_assignment: false
-  attribute name : String
-  attribute preferred_name : String
-  attribute phone : String
-  attribute organisation : String
-  attribute notes : String
-  attribute photo : String
+  column email : String, primary: true, auto: false
 
-  attribute banned : Bool = false
-  attribute dangerous : Bool = false
+  column name : String?
+  column preferred_name : String?
+  column phone : String?
+  column organisation : String?
+  column notes : String?
+  column photo : String?
+  column banned : Bool = false
+  column dangerous : Bool = false
+  column extension_data : JSON::Any, converter: Granite::Converters::Json(JSON::Any, JSON::Any)
 
-  attribute extension_data : JSON::Any
+  column searchable : String
 
-  validates :name, presence: true
-  validates :email, presence: true
-  ensure_unique :email
+  timestamps
 
-  before_create :generate_id
+  has_many :attendance, class_name: Attendee, foreign_key: "email"
+  has_many :events, class_name: EventMetadata, through: :attendance
 
-  def generate_id
-    self.id = "guest-#{self.email.downcase}"
+  before_create :downcase_email
+  before_save :update_searchable
+  before_destroy :cleanup_attendees
+
+  def downcase_email
+    self.email = self.email.try &.downcase
+  end
+
+  def update_searchable
+    # Limit the chars to 255 characters
+    self.searchable = "#{self.name} #{self.preferred_name} #{organisation} #{id}"[0..255].downcase
+  end
+
+  def cleanup_attendees
+    self.attendance.each { |attend| attend.destroy }
   end
 end
