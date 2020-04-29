@@ -22,5 +22,32 @@ PLACE_URI=https://example.place.technology
 STAFF_DOMAINS=admin.org.com,org.com
 
 # Database config:
-PG_DATABASE_URL=postgres_database_url
+PG_DATABASE_URL=postgresql://localhost/travis_test
+```
+
+## Local development
+
+```
+brew install postgres
+
+# Setup the data store
+sudo su
+mkdir -p /usr/local/pgsql
+chown steve /usr/local/pgsql
+exit
+
+initdb /usr/local/pgsql/data
+
+# Then can start the service in the background
+pg_ctl -D /usr/local/pgsql/data start
+
+# Or start it in the foreground
+postgres -D /usr/local/pgsql/data
+
+# This seems to be required
+createdb
+
+# Now the server is running with default user the same as your Mac login
+psql -c 'create database travis_test;'
+export PG_DATABASE_URL=postgresql://localhost/travis_test
 ```
