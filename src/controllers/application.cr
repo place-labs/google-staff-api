@@ -3,6 +3,8 @@ require "./utilities/*"
 
 abstract class Application < ActionController::Base
   STAFF_DOMAINS = ENV["STAFF_DOMAINS"].split(",").map(&.strip).reject(&.empty?)
+  # TODO:: Move this to user model
+  DEFAULT_TIME_ZONE = Time::Location.load(ENV["STAFF_TIME_ZONE"]? || "Australia/Sydney")
 
   # Helpers for determing picking off user from JWT, authorization
   include Utils::PlaceOSHelpers
@@ -29,23 +31,35 @@ abstract class Application < ActionController::Base
     response.headers["X-Request-ID"] = request_id
   end
 
-  def attending_guest(visitor : Attendee, guest : Guest?)
+  # Grab the users timezone
+  def get_timezone
+    tz = query_params["timezone"]?
+    if tz && !tz.empty?
+      Time::Location.load(URI.decode(tz))
+    else
+      DEFAULT_TIME_ZONE
+    end
+  end
+
+  def attending_guest(visitor : Attendee?, guest : Guest?)
     if guest
       {% begin %}
         {
           {% for key in [:email, :name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous, :extension_data] %}
             {{key.id}}: guest.{{key.id}},
           {% end %}
-          checked_in:     visitor.checked_in,
-          visit_expected: visitor.visit_expected,
+          checked_in:     visitor.try(&.checked_in) || false,
+          visit_expected: visitor.try(&.visit_expected) || false,
         }
       {% end %}
-    else
+    elsif visitor
       {
         email:          visitor.email,
         checked_in:     visitor.checked_in,
         visit_expected: visitor.visit_expected,
       }
+    else
+      raise "requires either an attendee or a guest"
     end
   end
 

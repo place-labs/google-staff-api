@@ -41,6 +41,28 @@ HEADERS = HTTP::Headers{
   "Authorization" => authentication[1]["Authorization"],
 }
 
+def generate_event
+  meta = EventMetadata.new
+  meta.system_id = "sys_id"
+  meta.event_id = "event1234"
+  meta.host_email = "user@org.com"
+  meta.resource_calendar = "resource@org.com"
+
+  meta.event_start = Time.utc
+  meta.event_end = 5.minutes.from_now
+  result = meta.save
+  result.should eq true
+  meta
+end
+
+def generate_guest
+  guest = Guest.new
+  guest.email = "bob@outside.com"
+  result = guest.save
+  result.should eq true
+  guest
+end
+
 EventMetadata.migrator.drop_and_create
 Attendee.migrator.drop_and_create
 Guest.migrator.drop_and_create

@@ -7,6 +7,7 @@ class Events < Application
     calendars = matching_calendar_ids
     render(json: [] of Nil) unless calendars.size > 0
 
+    include_cancelled = query_params["include_cancelled"]? == "true"
     user = user_token.user.email
     calendar = calendar_for(user)
 
@@ -16,7 +17,8 @@ class Events < Application
         calendar.events(
           calendar_id,
           args.period_start.not_nil!,
-          args.period_end.not_nil!
+          args.period_end.not_nil!,
+          showDeleted: include_cancelled
         ).items.map { |event| {calendar_id, system, event} }
       }
     }).get.flatten
@@ -102,7 +104,7 @@ class Events < Application
     head :bad_request unless system_id
 
     # Grab meeting metadata if it exists
-    metadata = EventMetadata.find("meta-#{system_id}-#{event_id}")
+    metadata = EventMetadata.find("#{system_id}-#{event_id}")
     render(json: [] of Nil) unless metadata
 
     # Find anyone who is attending
@@ -145,7 +147,10 @@ class Events < Application
 
   def standard_event(calendar_id, system, event, metadata)
     visitors = {} of String => Attendee
-    (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email] = vis }
+
+    if event.status != "cancelled"
+      (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email] = vis }
+    end
 
     # Grab the list of external visitors
     attendees = (event.attendees || NOP_G_ATTEND).map do |attendee|
@@ -170,6 +175,13 @@ class Events < Application
 
     event_start = (event.start.dateTime || event.start.date).not_nil!.to_unix
     event_end = event.end.try { |time| (time.dateTime || time.date).try &.to_unix }
+
+    # Ensure metadata is in sync
+    if metadata && (event_start != metadata.event_start.try(&.to_unix) || (event_end && event_end != metadata.event_end.try(&.to_unix)))
+      metadata.event_start = start_time = Time.unix(event_start)
+      metadata.event_end = event_end ? Time.unix(event_end) : (start_time + 24.hours)
+      metadata.save
+    end
 
     # TODO:: recurring events
     # TODO:: location

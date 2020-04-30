@@ -43,16 +43,36 @@ class Guests < Application
   end
 
   def show
-    # TODO:: find out if they are attending today
-    render json: current_guest
+    # find out if they are attending today
+    now = Time.local(get_timezone)
+    morning = now.at_beginning_of_day
+    tonight = now.at_end_of_day
+
+    guest = current_guest
+    attendee = Attendee.all(
+      %(WHERE guest_id = ? AND event_id IN (
+        SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?
+        )
+      LIMIT 1
+      ), [guest.id, tonight, morning]
+    ).map { |a| a }.first?
+
+    render json: attending_guest(attendee, guest)
   end
 
   def update
     guest = current_guest
     changes = Guest.from_json(request.body.as(IO))
-    {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous, :extension_data] %}
+    {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous] %}
       guest.{{key.id}} = changes.{{key.id}} if changes.{{key.id}}
     {% end %}
+
+    # merge changes into extension data
+    data = guest.extension_data.as_h
+    changes.extension_data.as_h.each { |key, value| data[key] = value }
+    guest.extension_data = nil
+    guest.ext_data = data.to_json
+
     save_and_respond guest, create: false
   end
 
@@ -68,8 +88,8 @@ class Guests < Application
   end
 
   get("/:id/meetings", :meetings) do
-    time = Time.utc
-    render json: current_guest.events.reject { |event| event.event_end > time }
+    future_only = query_params["include_past"]? == "true"
+    render json: current_guest.events(future_only)
   end
 
   # ============================================
