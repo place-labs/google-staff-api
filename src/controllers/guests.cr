@@ -91,6 +91,7 @@ class Guests < Application
     head :accepted
   end
 
+  # TODO:: Need to have this return in the correct format
   get("/:id/meetings", :meetings) do
     future_only = query_params["include_past"]? == "true"
     render json: current_guest.events(future_only)

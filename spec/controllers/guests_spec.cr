@@ -116,4 +116,55 @@ describe Guests do
       guest.destroy
     end
   end
+
+  it "should show a guests details" do
+    # instantiate the controller
+    response = IO::Memory.new
+    context = context("GET", "/api/staff/v1/guests/#{guest1.email}/", HEADERS, response_io: response)
+    context.route_params = {"id" => guest1.email.not_nil!}
+    app = Guests.new(context)
+
+    # Test the instance method of the controller
+    app.show
+    response.to_s.split("\r\n").reject(&.empty?)[-1].should eq(
+      %({"email":"steve@place.techn","name":"Steve","preferred_name":null,"phone":null,"organisation":null,"notes":null,"photo":null,"banned":false,"dangerous":false,"extension_data":{},"checked_in":false,"visit_expected":false})
+    )
+  end
+
+  it "should show a guests details when visiting today" do
+    # instantiate the controller
+    response = IO::Memory.new
+    context = context("GET", "/api/staff/v1/guests/#{guest1.email}/", HEADERS, response_io: response)
+    context.route_params = {"id" => guest1.email.not_nil!}
+    app = Guests.new(context)
+
+    meta = generate_event
+    attend = guest1.attendee_for(meta.id.not_nil!)
+
+    # Test the instance method of the controller
+    app.show
+    response.to_s.split("\r\n").reject(&.empty?)[-1].should eq(
+      %({"email":"steve@place.techn","name":"Steve","preferred_name":null,"phone":null,"organisation":null,"notes":null,"photo":null,"banned":false,"dangerous":false,"extension_data":{},"checked_in":false,"visit_expected":true})
+    )
+  end
+
+  it "should delete a guest" do
+    # instantiate the controller
+    context = context("DELETE", "/api/staff/v1/guests/#{guest1.email}/", HEADERS)
+    context.route_params = {"id" => guest1.email.not_nil!}
+    app = Guests.new(context)
+
+    # Test the instance method of the controller
+    app.destroy
+
+    # Check only one is returned
+    response = IO::Memory.new
+    app = Guests.new(context("GET", "/api/staff/v1/guests", HEADERS, response_io: response))
+
+    # Test the instance method of the controller
+    app.index
+    response.to_s.split("\r\n").reject(&.empty?)[-1].should eq(
+      %([{"email":"jon@place.techn","name":"Jon","preferred_name":null,"phone":null,"organisation":null,"notes":null,"photo":null,"banned":false,"dangerous":false,"extension_data":{},"checked_in":false,"visit_expected":false}])
+    )
+  end
 end
