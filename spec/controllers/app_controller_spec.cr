@@ -53,7 +53,7 @@ describe Calendars do
     results.should eq({
       "cal2"              => nil,
       "room1@example.com" => "sys-rJQQlR4Cn7",
-      "room2@example.com" => "sys-rJQSySsELE",
+      "room2@example.com" => "sys_id",
       "room3@example.com" => "sys-rJQVPIR9Uf",
       # Returned by a system ID request
       "room4@example.com" => "sys-AAJQVPIR9Uf",

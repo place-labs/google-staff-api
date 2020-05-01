@@ -17,9 +17,11 @@ class Guests < Application
       # We want a subset of the calendars
       if query_params["zone_ids"]? || query_params["system_ids"]?
         system_ids = matching_calendar_ids.values.map(&.try(&.id))
+        render(json: [] of Nil) if system_ids.empty?
+
         Attendee.all(
-          "WHERE event_id IN (SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ? AND system_id IN ?)",
-          [ending, starting, system_ids]
+          "WHERE event_id IN (SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ? AND system_id IN ('#{system_ids.join(%(','))}'))",
+          [ending, starting]
         ).each { |attendee| attendees[attendee.email] = attendee }
       else
         query = Attendee.all(
