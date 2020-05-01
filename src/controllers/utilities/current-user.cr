@@ -20,7 +20,7 @@ module Utils::CurrentUser
     begin
       @user_token = UserJWT.decode(token)
     rescue e : JWT::Error
-      Log.warn(exception: e) { "bearer malformed" }
+      Log.warn(exception: e) { "bearer malformed: #{e.message}" }
       # Request bearer was malformed
       raise Error::Unauthorized.new "bearer malformed"
     end
