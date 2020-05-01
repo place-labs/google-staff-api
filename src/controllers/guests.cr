@@ -8,8 +8,8 @@ class Guests < Application
     query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
     period_start = query_params["period_start"]?
     if period_start
-      starting = period_start.to_i64
-      ending = query_params["period_end"].to_i64
+      starting = Time.unix period_start.to_i64
+      ending = Time.unix query_params["period_end"].to_i64
 
       # Return the guests visiting today
       attendees = {} of String => Attendee
@@ -22,23 +22,25 @@ class Guests < Application
           [ending, starting, system_ids]
         ).each { |attendee| attendees[attendee.email] = attendee }
       else
-        Attendee.all(
+        query = Attendee.all(
           "WHERE event_id IN (SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?)",
           [ending, starting]
         ).each { |attendee| attendees[attendee.email] = attendee }
       end
 
+      render(json: [] of Nil) if attendees.empty?
+
       guests = {} of String => Guest
       Guest.where(:id, :in, attendees.keys).each { |guest| guests[guest.id.not_nil!] = guest }
 
-      render json: attendees.each { |email, visitor| attending_guest(visitor, guests[email]?) }
+      render json: attendees.map { |email, visitor| attending_guest(visitor, guests[email]?) }
     elsif query.empty?
       # Return the first 1000 guests
-      render json: Guest.order(:name).limit(1500).map { |g| g }
+      render json: Guest.order(:name).limit(1500).map { |g| attending_guest(nil, g) }
     else
       # Return guests based on the filter query
       query = "%#{query}%"
-      render json: Guest.all("WHERE searchable LIKE ? LIMIT 1500", [query]).map { |g| g }
+      render json: Guest.all("WHERE searchable LIKE ? LIMIT 1500", [query]).map { |g| attending_guest(nil, g) }
     end
   end
 
@@ -64,7 +66,7 @@ class Guests < Application
     guest = current_guest
     changes = Guest.from_json(request.body.as(IO))
     {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous] %}
-      guest.{{key.id}} = changes.{{key.id}} if changes.{{key.id}}
+      guest.{{key.id}} = changes.{{key.id}}
     {% end %}
 
     # merge changes into extension data

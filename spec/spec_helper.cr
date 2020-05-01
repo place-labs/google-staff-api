@@ -46,7 +46,7 @@ def generate_event
   meta.system_id = "sys_id"
   meta.event_id = "event1234"
   meta.host_email = "user@org.com"
-  meta.resource_calendar = "resource@org.com"
+  meta.resource_calendar = "room2@example.com"
 
   meta.event_start = Time.utc
   meta.event_end = 5.minutes.from_now

@@ -1,7 +1,7 @@
-require "./spec_helper"
+require "../spec_helper"
 
 describe Calendars do
-  systems_json = {{ read_file("#{__DIR__}/mocks/systems.json") }}
+  systems_json = {{ read_file("#{__DIR__}/../mocks/systems.json") }}
   systems_resp = Array(JSON::Any).from_json(systems_json).map &.to_json
 
   it "should generate a request ID string" do

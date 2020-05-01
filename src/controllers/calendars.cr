@@ -12,4 +12,13 @@ class Calendars < Application
 
     render json: candidates
   end
+
+  # configure the database
+  def destroy
+    # TODO:: add some basic auth here
+    EventMetadata.migrator.drop_and_create
+    Attendee.migrator.drop_and_create
+    Guest.migrator.drop_and_create
+    head :ok
+  end
 end
