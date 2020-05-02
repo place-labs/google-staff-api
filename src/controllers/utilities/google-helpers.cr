@@ -41,10 +41,4 @@ module Utils::GoogleHelpers
       render status: :not_acceptable, text: "Accepts: application/json"
     end
   end
-
-  class CalendarPeriod < Params
-    # convert to Time automatically
-    attribute period_start : Time, converter: Time::EpochConverter
-    attribute period_end : Time, converter: Time::EpochConverter
-  end
 end

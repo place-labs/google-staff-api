@@ -1,9 +1,9 @@
 class Events < Application
   base "/api/staff/v1/events"
 
-  # TODO:: show deleted events
   def index
-    args = CalendarPeriod.new(params)
+    period_start = Time.unix(query_params["period_start"].to_i64)
+    period_end = Time.unix(query_params["period_end"].to_i64)
     calendars = matching_calendar_ids
     render(json: [] of Nil) unless calendars.size > 0
 
@@ -16,8 +16,8 @@ class Events < Application
       Promise.defer {
         calendar.events(
           calendar_id,
-          args.period_start.not_nil!,
-          args.period_end.not_nil!,
+          period_start,
+          period_end,
           showDeleted: include_cancelled
         ).items.map { |event| {calendar_id, system, event} }
       }
