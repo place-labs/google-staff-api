@@ -6,17 +6,17 @@ class Guest < Granite::Base
 
   EMPTY_JSON = JSON.parse("{}")
 
-  def email
-    self.id
+  def id
+    self.email
   end
 
-  def email=(email : String?)
-    self.id = email
+  def id=(email : String?)
+    self.email = email
   end
 
   # A guest can have multiple entries with different emails
   # Profiles are limited to a single email
-  column id : String, primary: true, auto: false
+  column email : String, primary: true, auto: false
 
   column name : String?
   column preferred_name : String?
@@ -44,18 +44,18 @@ class Guest < Granite::Base
 
   has_many :attendees, class_name: Attendee, foreign_key: :guest_id
 
-  def events(future_only = true)
+  def events(future_only = true, limit = 10)
     if future_only
       EventMetadata.all(
         %(WHERE event_end >= ? AND id IN (
           SELECT event_id FROM attendee WHERE guest_id = ?
-        ) ORDER BY event_start ASC), [Time.utc, self.id]
+        ) ORDER BY event_start ASC LIMIT ?), [Time.utc, self.id, limit]
       ).map { |e| e }
     else
       EventMetadata.all(
         %(WHERE id IN (
           SELECT event_id FROM attendee WHERE guest_id = ?
-        ) ORDER BY event_start ASC), [self.id]
+        ) ORDER BY event_start ASC LIMIT ?), [self.id, limit]
       ).map { |e| e }
     end
   end
@@ -91,5 +91,19 @@ class Guest < Granite::Base
     elsif @ext_data.nil? || @ext_data.try &.empty?
       @ext_data = "{}"
     end
+  end
+
+  def attending_today?(timezone)
+    now = Time.local(timezone)
+    morning = now.at_beginning_of_day
+    tonight = now.at_end_of_day
+
+    Attendee.all(
+      %(WHERE guest_id = ? AND event_id IN (
+        SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?
+        )
+      LIMIT 1
+      ), [self.id, tonight, morning]
+    ).map { |a| a }.first?
   end
 end

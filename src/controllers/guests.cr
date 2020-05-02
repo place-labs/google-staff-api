@@ -33,7 +33,7 @@ class Guests < Application
       render(json: [] of Nil) if attendees.empty?
 
       guests = {} of String => Guest
-      Guest.where(:id, :in, attendees.keys).each { |guest| guests[guest.id.not_nil!] = guest }
+      Guest.where(:email, :in, attendees.keys).each { |guest| guests[guest.email.not_nil!] = guest }
 
       render json: attendees.map { |email, visitor| attending_guest(visitor, guests[email]?) }
     elsif query.empty?
@@ -48,19 +48,8 @@ class Guests < Application
 
   def show
     # find out if they are attending today
-    now = Time.local(get_timezone)
-    morning = now.at_beginning_of_day
-    tonight = now.at_end_of_day
-
     guest = current_guest
-    attendee = Attendee.all(
-      %(WHERE guest_id = ? AND event_id IN (
-        SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?
-        )
-      LIMIT 1
-      ), [guest.id, tonight, morning]
-    ).map { |a| a }.first?
-
+    attendee = guest.attending_today?(get_timezone)
     render json: attending_guest(attendee, guest)
   end
 
@@ -77,13 +66,24 @@ class Guests < Application
     guest.extension_data = nil
     guest.ext_data = data.to_json
 
-    save_and_respond guest, create: false
+    if guest.save
+      attendee = guest.attending_today?(get_timezone)
+      render json: attending_guest(attendee, guest), status: HTTP::Status::OK
+    else
+      render json: guest.errors.map(&.to_s), status: :unprocessable_entity
+    end
   end
 
   put "/:id", :update_alt { update }
 
   def create
-    save_and_respond Guest.from_json(request.body.as(IO)), create: true
+    guest = Guest.from_json(request.body.as(IO))
+    if guest.save
+      attendee = guest.attending_today?(get_timezone)
+      render json: attending_guest(attendee, guest), status: HTTP::Status::CREATED
+    else
+      render json: guest.errors.map(&.to_s), status: :unprocessable_entity
+    end
   end
 
   def destroy
@@ -91,10 +91,26 @@ class Guests < Application
     head :accepted
   end
 
-  # TODO:: Need to have this return in the correct format
   get("/:id/meetings", :meetings) do
-    future_only = query_params["include_past"]? == "true"
-    render json: current_guest.events(future_only)
+    future_only = query_params["include_past"]? != "true"
+    limit = (query_params["limit"]? || "10").to_i
+
+    placeos_client = get_placeos_client.systems
+    calendar = calendar_for(user_token.user.email)
+
+    events = Promise.all(current_guest.events(future_only, limit).map { |metadata|
+      Promise.defer {
+        cal_id = metadata.resource_calendar.not_nil!
+        system = placeos_client.fetch(metadata.system_id.not_nil!)
+        event = calendar.event(metadata.event_id.not_nil!, cal_id)
+        if event
+          standard_event(cal_id, system, event, metadata)
+        else
+          nil
+        end
+      }
+    }).get.compact
+    render json: events
   end
 
   # ============================================

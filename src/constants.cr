@@ -1,7 +1,7 @@
 require "action-controller/logger"
 
 module App
-  NAME    = "PlaceOS Staff API"
+  NAME    = "StaffAPI"
   VERSION = {{ `shards version "#{__DIR__}"`.chomp.stringify.downcase }}
 
   Log         = ::Log.for(NAME)

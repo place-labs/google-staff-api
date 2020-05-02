@@ -8,7 +8,7 @@ class Attendee < Granite::Base
   column id : Int64, primary: true
 
   belongs_to event : EventMetadata, primary_key: "id", foreign_key: event_id : String
-  belongs_to guest : Guest, primary_key: "id", foreign_key: guest_id : String
+  belongs_to guest : Guest, primary_key: "email", foreign_key: guest_id : String
 
   column checked_in : Bool = false
   column visit_expected : Bool = true

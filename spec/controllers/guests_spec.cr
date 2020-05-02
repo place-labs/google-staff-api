@@ -167,4 +167,33 @@ describe Guests do
       %([{"email":"jon@place.techn","name":"Jon","preferred_name":null,"phone":null,"organisation":null,"notes":null,"photo":null,"banned":false,"dangerous":false,"extension_data":{},"checked_in":false,"visit_expected":false}])
     )
   end
+
+  it "should create and update a guest" do
+    # instantiate the controller
+    body = IO::Memory.new
+    body << %({"email":"bob@jane.com","banned":true,"extension_data":{"test":"data"}})
+    body.rewind
+    response = IO::Memory.new
+    context = context("POST", "/api/staff/v1/guests/", HEADERS, body, response_io: response)
+    app = Guests.new(context)
+    app.create
+
+    response.to_s.split("\r\n").reject(&.empty?)[-1].should eq(
+      %({"email":"bob@jane.com","name":null,"preferred_name":null,"phone":null,"organisation":null,"notes":null,"photo":null,"banned":true,"dangerous":false,"extension_data":{"test":"data"},"checked_in":false,"visit_expected":false})
+    )
+
+    # instantiate the controller
+    body = IO::Memory.new
+    body << %({"name":"Bob Jane","extension_data":{"other":"stuff"}})
+    body.rewind
+    response = IO::Memory.new
+    context = context("PATCH", "/api/staff/v1/guests/bob@jane.com", HEADERS, body, response_io: response)
+    context.route_params = {"id" => "bob@jane.com"}
+    app = Guests.new(context)
+    app.update
+
+    response.to_s.split("\r\n").reject(&.empty?)[-1].should eq(
+      %({"email":"bob@jane.com","name":"Bob Jane","preferred_name":null,"phone":null,"organisation":null,"notes":null,"photo":null,"banned":false,"dangerous":false,"extension_data":{"test":"data","other":"stuff"},"checked_in":false,"visit_expected":false})
+    )
+  end
 end
