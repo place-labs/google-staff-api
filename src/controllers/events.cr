@@ -41,13 +41,14 @@ class Events < Application
 
     # This is the resource calendar, it will be moved to one of the attendees
     property system_id : String
-    property title : String  # summary
-    property body : String?  # description
+    property title : String # summary
+    property body : String? # description
     property location : String?
+    property status : String?
 
     # creator == current user
     property host : String?  # organizer
-    property private : Bool?  # visibility
+    property private : Bool? # visibility
 
     property event_start : Int64
     property event_end : Int64
@@ -56,17 +57,14 @@ class Events < Application
     property attendees : Array(NamedTuple(
       name: String?,
       email: String,
-      visit_expected: Bool?
-    ))?
+      visit_expected: Bool?))?
 
     property extension_data : JSON::Any?
   end
 
   def create
-    body = request.body.as(IO).gets_to_end
-
     # Create event
-    event = CreateCalEvent.from_json(body)
+    event = CreateCalEvent.from_json(request.body.as(IO))
     user = user_token.user.email
     host = event.host || user
     calendar = calendar_for(user)
@@ -74,18 +72,19 @@ class Events < Application
     attendees = event.attendees.try(&.map { |a| a[:email] }) || [] of String
     system = get_placeos_client.systems.fetch(event.system_id)
     attendees << system.email.not_nil!
+    attendees.uniq!
 
     zone = if tz = event.timezone
-            Time::Location.load(tz)
-          else
-            get_timezone
-          end
+             Time::Location.load(tz)
+           else
+             get_timezone
+           end
     event_start = Time.unix(event.event_start).in zone
     event_end = Time.unix(event.event_end).in zone
 
     gevent = calendar.create(
-      event_start: Time.unix(event.event_start),
-      event_end: Time.unix(event.event_end),
+      event_start: event_start,
+      event_end: event_end,
       calendar_id: host,
       attendees: attendees,
       visibility: event.private ? Google::Visibility::Private : Google::Visibility::Default,
@@ -136,6 +135,147 @@ class Events < Application
     end
 
     render json: standard_event(system.email, system, gevent, nil)
+  end
+
+  class UpdateCalEvent
+    include JSON::Serializable
+
+    # This is the resource calendar, it will be moved to one of the attendees
+    property system_id : String?
+    property title : String? # summary
+    property body : String?  # description
+    property location : String?
+    property status : String?
+
+    # creator == current user
+    property host : String?  # organizer
+    property private : Bool? # visibility
+
+    property event_start : Int64?
+    property event_end : Int64?
+    property timezone : String?
+
+    property attendees : Array(NamedTuple(
+      name: String?,
+      email: String,
+      visit_expected: Bool?))?
+
+    property extension_data : JSON::Any?
+  end
+
+  def update
+    event_id = route_params["id"]
+    changes = UpdateCalEvent.from_json(request.body.as(IO))
+
+    cal_id = if user_cal = query_params["calendar"]?
+               found = get_user_calendars.reject { |cal| cal[:id] != user_cal }.first?
+               head(:not_found) unless found
+               user_cal
+             elsif system_id = (query_params["system_id"]? || changes.system_id)
+               system = get_placeos_client.systems.fetch(system_id)
+               # TODO:: return 404 if system not found
+               sys_cal = system.email
+               head(:not_found) unless sys_cal
+               sys_cal
+             else
+               head :bad_request
+             end
+    event = get_event(event_id, cal_id)
+    head(:not_found) unless event
+
+    # User details
+    user = user_token.user.email
+    host = event.organizer.try &.email || user
+
+    # TODO:: check permisions as may be able to edit on behalf of the user
+    existing_attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
+    head(:forbidden) unless user == host || user.in?(existing_attendees)
+    calendar = calendar_for(host)
+
+    # Update event
+    attendees = changes.attendees.try(&.map { |a| a[:email] }) || existing_attendees
+    attendees << cal_id
+    attendees.uniq!
+
+    zone = if tz = changes.timezone
+             Time::Location.load(tz)
+           elsif event_tz = event.start.timeZone
+             Time::Location.load(event_tz)
+           else
+             get_timezone
+           end
+
+    event_start = changes.event_start
+    event_end = changes.event_end
+    event_start = event_start ? Time.unix(event_start).in(zone) : (event.start.dateTime || event.start.date).not_nil!
+    event_end = event_end ? Time.unix(event_end).in(zone) : (event.end.try(&.dateTime) || event.end.try(&.date)).not_nil!
+    all_day = !!event.start.date
+    priv = if changes.private == nil
+             event.visibility.in?({"private", "confidential"})
+           else
+             changes.private
+           end
+
+    updated_event = calendar.update(
+      event.id,
+      event_start: event_start,
+      event_end: event_end,
+      calendar_id: host,
+      attendees: attendees,
+      all_day: all_day,
+      visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
+      location: changes.location || event.location,
+      summary: changes.title || event.summary,
+      description: changes.body || event.description
+    )
+
+    if system
+      meta = EventMetadata.find("#{system.id}-#{event.id}") || EventMetadata.new
+      meta.system_id = system.id.not_nil!
+      meta.event_id = event.id
+      meta.event_start = event_start
+      meta.event_end = event_end
+      meta.resource_calendar = system.email.not_nil!
+      meta.host_email = host
+
+      if extension_data = changes.extension_data
+        data = meta.extension_data.as_h
+        extension_data.as_h.each { |key, value| data[key] = value }
+        meta.extension_data = nil
+        meta.ext_data = data.to_json
+        meta.save!
+      end
+
+      # Grab the list of externals that might be attending
+      attending = changes.try &.attendees.try(&.reject { |attendee|
+        attendee[:visit_expected].nil?
+      })
+
+      if attending
+        # Create guests
+        attending.each do |attendee|
+          email = attendee[:email].strip.downcase
+          guest = Guest.find(email) || Guest.new
+          guest.email = email
+          guest.name ||= attendee[:name]
+          guest.save!
+        end
+
+        # Create attendees
+        attending.each do |attendee|
+          email = attendee[:email].strip.downcase
+          attend = Attendee.new
+          attend.event_id = meta.id.not_nil!
+          attend.guest_id = email
+          attend.visit_expected = true
+          attend.save!
+        end
+      end
+
+      render json: standard_event(cal_id, system, updated_event, meta)
+    else
+      render json: standard_event(cal_id, nil, updated_event, nil)
+    end
   end
 
   def show

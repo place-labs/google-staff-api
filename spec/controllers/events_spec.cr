@@ -10,14 +10,14 @@ describe Events do
     WebMock
       .stub(:get, DOMAIN + "/api/engine/v2/systems")
       .with(query: {
-        "limit"    => "1000",
-        "offset"   => "0",
-        "zone_id"  => "z1"
+        "limit"   => "1000",
+        "offset"  => "0",
+        "zone_id" => "z1",
       })
       .to_return(body: "[#{systems_resp[1]}]")
 
-    WebMock.stub(:get, "https://www.googleapis.com/calendar/v3/calendars/room2@example.com/events?maxResults=2500&singleEvents=true&timeMin=2020-05-02T08:20:45Z&timeMax=2020-05-02T12:21:37Z&showDeleted=false").
-         to_return(body: CalendarHelper.events_response.to_json)
+    WebMock.stub(:get, "https://www.googleapis.com/calendar/v3/calendars/room2@example.com/events?maxResults=2500&singleEvents=true&timeMin=2020-05-02T08:20:45Z&timeMax=2020-05-02T12:21:37Z&showDeleted=false")
+      .to_return(body: CalendarHelper.events_response.to_json)
 
     now = 1588407645
     later = 1588422097
@@ -32,10 +32,8 @@ describe Events do
 
     # Test the instance method of the controller
     app.index
-    response.to_s.split("\r\n").reject(&.empty?)[-1].starts_with?(
-      "[{\"id\":\"123456789\",\"status\":null,\"calendar\":\"room2@example.com\",\"title\":null,\"body\":null,\"host\":null,\"creator\":{\"email\":\"test@example.com\"},\"private\":false,\"event_start"
-    ).should eq(
-      true
+    response.to_s.split("\r\n").reject(&.empty?)[-1].should start_with(
+      "[{\"id\":\"123456789\",\"status\":null,\"calendar\":\"room2@example.com\",\"title\":null,\"body\":null,\"location\":null,\"host\":null,\"creator\":\"test@example.com\",\"private\":false,\"event_start\""
     )
   end
 end
