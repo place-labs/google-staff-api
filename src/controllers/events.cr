@@ -70,7 +70,8 @@ class Events < Application
     calendar = calendar_for(user)
 
     attendees = event.attendees.try(&.map { |a| a[:email] }) || [] of String
-    system = get_placeos_client.systems.fetch(event.system_id)
+    placeos_client = get_placeos_client
+    system = placeos_client.systems.fetch(event.system_id)
     attendees << system.email.not_nil!
     attendees.uniq!
 
@@ -97,6 +98,17 @@ class Events < Application
     attending = event.attendees.try(&.select { |attendee|
       attendee[:visit_expected]
     })
+
+    # Update PlaceOS with an signal "/bookings/event/changed"
+    spawn do
+      placeos_client.root.signal("bookings/event/changed", {
+        action:    :create,
+        system_id: event.system_id,
+        event_id:  gevent.id,
+        host:      host,
+        resource:  system.email,
+      })
+    end
 
     # Save custom data
     if (ext_data = event.extension_data) || (attending && !attending.empty?)
@@ -167,12 +179,14 @@ class Events < Application
     event_id = route_params["id"]
     changes = UpdateCalEvent.from_json(request.body.as(IO))
 
+    placeos_client = get_placeos_client
+
     cal_id = if user_cal = query_params["calendar"]?
                found = get_user_calendars.reject { |cal| cal[:id] != user_cal }.first?
                head(:not_found) unless found
                user_cal
              elsif system_id = (query_params["system_id"]? || changes.system_id)
-               system = get_placeos_client.systems.fetch(system_id)
+               system = placeos_client.systems.fetch(system_id)
                # TODO:: return 404 if system not found
                sys_cal = system.email
                head(:not_found) unless sys_cal
@@ -244,6 +258,18 @@ class Events < Application
         meta.extension_data = nil
         meta.ext_data = data.to_json
         meta.save!
+      end
+
+      # Update PlaceOS with an signal "bookings/event/changed"
+      spawn do
+        sys = system.not_nil!
+        placeos_client.root.signal("bookings/event/changed", {
+          action:    :update,
+          system_id: sys.id,
+          event_id:  event_id,
+          host:      host,
+          resource:  sys.email,
+        })
       end
 
       # Grab the list of externals that might be attending
@@ -324,7 +350,8 @@ class Events < Application
       head :accepted
     elsif system_id = query_params["system_id"]?
       # Need to grab the calendar associated with this system
-      system = get_placeos_client.systems.fetch(system_id)
+      placeos_client = get_placeos_client
+      system = placeos_client.systems.fetch(system_id)
       # TODO:: return 404 if system not found
       cal_id = system.email
       head(:not_found) unless cal_id
@@ -332,6 +359,15 @@ class Events < Application
       EventMetadata.find("#{system_id}-#{event_id}").try &.destroy
       calendar = calendar_for # admin when no user passed
       calendar.delete(event_id, cal_id, notify_option)
+
+      spawn do
+        placeos_client.root.signal("bookings/event/changed", {
+          action:    :cancelled,
+          system_id: system.id,
+          event_id:  event_id,
+          resource:  system.email,
+        })
+      end
 
       head :accepted
     end

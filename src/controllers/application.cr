@@ -79,7 +79,10 @@ abstract class Application < ActionController::Base
   def standard_event(calendar_id, system, event, metadata)
     visitors = {} of String => Attendee
 
-    if event.status != "cancelled"
+    if event.status == "cancelled"
+      metadata.try &.destroy
+      metadata = nil
+    else
       (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email] = vis }
     end
 

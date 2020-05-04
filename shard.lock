@@ -6,7 +6,7 @@ shards:
 
   action-controller:
     github: spider-gazelle/action-controller
-    version: 3.0.2
+    version: 3.1.0
 
   active-model:
     github: spider-gazelle/active-model
@@ -18,7 +18,7 @@ shards:
 
   bindata:
     github: spider-gazelle/bindata
-    version: 1.3.0
+    version: 1.4.0
 
   bisect:
     github: spider-gazelle/bisect
@@ -44,6 +44,10 @@ shards:
     github: askn/faker
     version: 0.4.0
 
+  future:
+    github: crystal-community/future.cr
+    version: 0.1.0
+
   google:
     github: PlaceOS/google
     version: 1.0.3
@@ -59,10 +63,6 @@ shards:
   jwt:
     github: crystal-community/jwt
     version: 1.4.0
-
-  kilt:
-    github: jeromegn/kilt
-    version: 0.6.0
 
   models:
     github: placeos/models
@@ -82,7 +82,7 @@ shards:
 
   placeos:
     github: placeos/crystal-client
-    commit: c00b434a48e9cdaf566cd5415036c6b149c086f2
+    commit: 6748b58b58a124c47b31b9064b42ab13733cdb84
 
   promise:
     github: spider-gazelle/promise
@@ -102,7 +102,7 @@ shards:
 
   tasker:
     github: spider-gazelle/tasker
-    version: 1.2.2
+    version: 1.3.0
 
   webmock:
     github: manastech/webmock.cr
