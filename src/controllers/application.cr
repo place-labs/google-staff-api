@@ -123,6 +123,7 @@ abstract class Application < ActionController::Base
       calendar:       calendar_id,
       title:          event.summary,
       body:           event.description,
+      location:       event.location,
       host:           event.organizer,
       creator:        event.creator,
       private:        event.visibility.in?({"private", "confidential"}),

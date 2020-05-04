@@ -36,6 +36,108 @@ class Events < Application
     }
   end
 
+  class CreateCalEvent
+    include JSON::Serializable
+
+    # This is the resource calendar, it will be moved to one of the attendees
+    property system_id : String
+    property title : String  # summary
+    property body : String?  # description
+    property location : String?
+
+    # creator == current user
+    property host : String?  # organizer
+    property private : Bool?  # visibility
+
+    property event_start : Int64
+    property event_end : Int64
+    property timezone : String?
+
+    property attendees : Array(NamedTuple(
+      name: String?,
+      email: String,
+      visit_expected: Bool?
+    ))?
+
+    property extension_data : JSON::Any?
+  end
+
+  def create
+    body = request.body.as(IO).gets_to_end
+
+    # Create event
+    event = CreateCalEvent.from_json(body)
+    user = user_token.user.email
+    host = event.host || user
+    calendar = calendar_for(user)
+
+    attendees = event.attendees.try(&.map { |a| a[:email] }) || [] of String
+    system = get_placeos_client.systems.fetch(event.system_id)
+    attendees << system.email.not_nil!
+
+    zone = if tz = event.timezone
+            Time::Location.load(tz)
+          else
+            get_timezone
+          end
+    event_start = Time.unix(event.event_start).in zone
+    event_end = Time.unix(event.event_end).in zone
+
+    gevent = calendar.create(
+      event_start: Time.unix(event.event_start),
+      event_end: Time.unix(event.event_end),
+      calendar_id: host,
+      attendees: attendees,
+      visibility: event.private ? Google::Visibility::Private : Google::Visibility::Default,
+      location: event.location,
+      summary: event.title,
+      description: event.body
+    )
+
+    # Grab the list of externals that might be attending
+    attending = event.attendees.try(&.select { |attendee|
+      attendee[:visit_expected]
+    })
+
+    # Save custom data
+    if (ext_data = event.extension_data) || (attending && !attending.empty?)
+      meta = EventMetadata.new
+      meta.system_id = system.id.not_nil!
+      meta.event_id = gevent.id
+      meta.event_start = event_start
+      meta.event_end = event_end
+      meta.resource_calendar = system.email.not_nil!
+      meta.host_email = host
+      meta.extension_data = ext_data
+      meta.save!
+
+      if attending
+        # Create guests
+        attending.each do |attendee|
+          email = attendee[:email].strip.downcase
+          guest = Guest.find(email) || Guest.new
+          guest.email = email
+          guest.name ||= attendee[:name]
+          guest.save!
+        end
+
+        # Create attendees
+        attending.each do |attendee|
+          email = attendee[:email].strip.downcase
+          attend = Attendee.new
+          attend.event_id = meta.id.not_nil!
+          attend.guest_id = email
+          attend.visit_expected = true
+          attend.save!
+        end
+      end
+
+      render json: standard_event(system.email, system, gevent, meta)
+    end
+
+    render json: standard_event(system.email, system, gevent, nil)
+  end
+
   def show
     event_id = route_params["id"]
     if user_cal = query_params["calendar"]?
