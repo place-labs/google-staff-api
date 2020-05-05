@@ -91,26 +91,26 @@ abstract class Application < ActionController::Base
       email = attendee.email.downcase
       if visitor = visitors[email]?
         {
-          name:            attendee.displayName || email,
+          name:            attendee.display_name || email,
           email:           email,
-          response_status: attendee.responseStatus,
+          response_status: attendee.response_status,
           checked_in:      visitor.checked_in,
           visit_expected:  visitor.visit_expected,
           resource:        attendee.resource,
         }
       else
         {
-          name:            attendee.displayName || email,
+          name:            attendee.display_name || email,
           email:           email,
-          response_status: attendee.responseStatus,
+          response_status: attendee.response_status,
           organizer:       attendee.organizer,
           resource:        attendee.resource,
         }
       end
     end
 
-    event_start = (event.start.dateTime || event.start.date).not_nil!.to_unix
-    event_end = event.end.try { |time| (time.dateTime || time.date).try &.to_unix }
+    event_start = (event.start.date_time || event.start.date).not_nil!.to_unix
+    event_end = event.end.try { |time| (time.date_time || time.date).try &.to_unix }
 
     # Ensure metadata is in sync
     if metadata && (event_start != metadata.event_start.try(&.to_unix) || (event_end && event_end != metadata.event_end.try(&.to_unix)))
@@ -134,7 +134,7 @@ abstract class Application < ActionController::Base
       private:        event.visibility.in?({"private", "confidential"}),
       event_start:    event_start,
       event_end:      event_end,
-      timezone:       event.start.timeZone,
+      timezone:       event.start.time_zone,
       all_day:        !!event.start.date,
       attendees:      attendees,
       system:         system,

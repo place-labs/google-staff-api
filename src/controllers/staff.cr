@@ -14,26 +14,26 @@ class Staff < Application
   end
 
   def build_user(google_user) : Hash(Symbol, String)
-    user_name = google_user.name.fullName || "#{google_user.name.givenName} #{google_user.name.familyName}"
+    user_name = google_user.name.full_name || "#{google_user.name.given_name} #{google_user.name.family_name}"
 
     if phones = google_user.phones.try(&.select(&.primary))
-      phone = phones.first?.try(&.value) || google_user.recoveryPhone
+      phone = phones.first?.try(&.value) || google_user.recovery_phone
     end
 
     if orgs = google_user.organizations.try(&.select(&.primary))
       department = orgs.first?.try &.department
     end
 
-    if accounts = google_user.posixAccounts.try(&.select(&.primary))
+    if accounts = google_user.posix_accounts.try(&.select(&.primary))
       account = accounts.first?.try &.username
     end
 
     {
       name:       user_name,
-      email:      google_user.primaryEmail,
+      email:      google_user.primary_email,
       phone:      phone,
       department: department,
-      photo:      google_user.thumbnailPhotoUrl,
+      photo:      google_user.thumbnail_photo_url,
       username:   account,
     }.to_h.compact
   end

@@ -18,7 +18,7 @@ shards:
 
   bindata:
     github: spider-gazelle/bindata
-    version: 1.4.0
+    version: 1.5.0
 
   bisect:
     github: spider-gazelle/bisect
@@ -50,7 +50,7 @@ shards:
 
   google:
     github: PlaceOS/google
-    version: 1.0.3
+    version: 2.0.0
 
   granite:
     github: amberframework/granite
@@ -70,7 +70,7 @@ shards:
 
   neuroplastic:
     github: spider-gazelle/neuroplastic
-    version: 1.4.0
+    version: 1.4.1
 
   openssl_ext:
     github: stakach/openssl_ext

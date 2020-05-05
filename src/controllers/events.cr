@@ -213,7 +213,7 @@ class Events < Application
 
     zone = if tz = changes.timezone
              Time::Location.load(tz)
-           elsif event_tz = event.start.timeZone
+           elsif event_tz = event.start.time_zone
              Time::Location.load(event_tz)
            else
              get_timezone
@@ -221,8 +221,8 @@ class Events < Application
 
     event_start = changes.event_start
     event_end = changes.event_end
-    event_start = event_start ? Time.unix(event_start).in(zone) : (event.start.dateTime || event.start.date).not_nil!
-    event_end = event_end ? Time.unix(event_end).in(zone) : (event.end.try(&.dateTime) || event.end.try(&.date)).not_nil!
+    event_start = event_start ? Time.unix(event_start).in(zone) : (event.start.date_time || event.start.date).not_nil!
+    event_end = event_end ? Time.unix(event_end).in(zone) : (event.end.try(&.date_time) || event.end.try(&.date)).not_nil!
     all_day = !!event.start.date
     priv = if changes.private == nil
              event.visibility.in?({"private", "confidential"})
