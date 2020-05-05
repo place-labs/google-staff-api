@@ -96,6 +96,7 @@ abstract class Application < ActionController::Base
           response_status: attendee.responseStatus,
           checked_in:      visitor.checked_in,
           visit_expected:  visitor.visit_expected,
+          resource:        attendee.resource,
         }
       else
         {
@@ -103,6 +104,7 @@ abstract class Application < ActionController::Base
           email:           email,
           response_status: attendee.responseStatus,
           organizer:       attendee.organizer,
+          resource:        attendee.resource,
         }
       end
     end
