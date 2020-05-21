@@ -10,6 +10,7 @@ STAFF_TIME_ZONE=Australia/Sydney
 GOOGLE_PRIVATE_KEY=base64
 GOOGLE_ISSUER=placeos@organisation.iam.gserviceaccount.com
 GOOGLE_ADMIN_ACCOUNT=placeos_service_account@admin.org.com
+GOOGLE_DIRECTORY_DOMAIN=example.com
 
 # Public key for decrypting and validating JWT tokens
 SECRET_KEY_BASE=base64-public-key
