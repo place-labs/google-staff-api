@@ -28,7 +28,11 @@ class Events < Application
     metadata_ids = results.map { |(calendar_id, system, event)|
       system.nil? ? nil : "#{system.id}-#{event.id}"
     }.compact
-    EventMetadata.where(:id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
+
+    # Don't perform the query if there are no calendar entries
+    if metadata_ids.size > 0
+      EventMetadata.where(:id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
+    end
 
     # return array of standardised events
     render json: results.map { |(calendar_id, system, event)|
