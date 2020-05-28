@@ -208,4 +208,17 @@ abstract class Application < ActionController::Base
     Log.debug(exception: error) { model_errors }
     render status: :unprocessable_entity, json: model_errors
   end
+
+  # 404 if resource not present
+  rescue_from PQ::PQError do |error|
+    Log.debug { error.inspect_with_backtrace }
+    respond_with(:internal_server_error) do
+      text error.inspect_with_backtrace
+      json({
+        error:     error.message,
+        backtrace: error.backtrace?,
+        fields:    error.fields.map(&.inspect),
+      })
+    end
+  end
 end
