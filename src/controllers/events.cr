@@ -30,7 +30,7 @@ class Events < Application
     }.compact
 
     # Don't perform the query if there are no calendar entries
-    if metadata_ids.size > 0
+    if !metadata_ids.empty?
       EventMetadata.where(:id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
     end
 

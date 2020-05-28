@@ -96,6 +96,10 @@ shards:
     github: spider-gazelle/rethinkdb-orm
     version: 2.9.0
 
+  secrets-env:
+    github: place-labs/secrets-env
+    version: 1.0.0
+
   simple_retry:
     github: spider-gazelle/simple_retry
     version: 1.1.0

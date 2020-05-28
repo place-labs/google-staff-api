@@ -31,6 +31,9 @@ dependencies:
   promise:
     github: spider-gazelle/promise
 
+  secrets-env:
+    github: place-labs/secrets-env
+
 development_dependencies:
   ameba:
     github: veelenga/ameba

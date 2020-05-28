@@ -1,4 +1,5 @@
 require "action-controller/logger"
+require "secrets-env"
 
 module App
   NAME    = "StaffAPI"
@@ -16,6 +17,8 @@ module App
 
   COOKIE_SESSION_KEY    = ENV["COOKIE_SESSION_KEY"]? || "_staff_api_"
   COOKIE_SESSION_SECRET = ENV["COOKIE_SESSION_SECRET"]? || "4f74c0b358d5bab4000dd3c75465dc2c"
+
+  PG_DATABASE_URL = ENV["PG_DATABASE_URL"]
 
   def self.running_in_production?
     PRODUCTION
