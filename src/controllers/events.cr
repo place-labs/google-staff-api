@@ -383,7 +383,7 @@ class Events < Application
     event_id = route_params["id"]
     render(json: [] of Nil) if query_params["calendar"]?
     system_id = query_params["system_id"]?
-    head :bad_request unless system_id
+    render :bad_request, json: {error: "missing system_id param"} unless system_id
 
     # Grab meeting metadata if it exists
     metadata = EventMetadata.find("#{system_id}-#{event_id}")
@@ -407,10 +407,22 @@ class Events < Application
     guest_email = route_params["guest_id"].downcase
     checkin = (query_params["state"]? || "true") == "true"
 
-    attendee = Attendee.where(guest_id: guest_email, event_id: event_id).limit(1).map { |at| at }.first
-    attendee.checked_in = checkin
-    attendee.save!
+    system_id = query_params["system_id"]?
+    render :bad_request, json: {error: "missing system_id param"} unless system_id
 
-    render json: attending_guest(attendee, attendee.guest)
+    metadata_id = "#{system_id}-#{event_id}"
+
+    attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }
+    if attendees.size > 0
+      attendee = attendees.first
+      attendee.checked_in = checkin
+      attendee.save!
+
+      render json: attending_guest(attendee, attendee.guest)
+    else
+      # possibly this vistor was not expected? We can check if they are in the event
+      # TODO::
+      head :not_found
+    end
   end
 end
