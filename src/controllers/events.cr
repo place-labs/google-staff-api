@@ -339,7 +339,7 @@ class Events < Application
 
   def destroy
     event_id = route_params["id"]
-    notify_guests = query_params["notify"] != "false"
+    notify_guests = query_params["notify"]? != "false"
     notify_option = notify_guests ? Google::UpdateGuests::All : Google::UpdateGuests::None
 
     if user_cal = query_params["calendar"]?
