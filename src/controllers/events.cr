@@ -44,7 +44,7 @@ class Events < Application
     include JSON::Serializable
 
     # This is the resource calendar, it will be moved to one of the attendees
-    property system_id : String
+    property system_id : String?
     property title : String # summary
     property body : String? # description
     property location : String?
@@ -75,8 +75,13 @@ class Events < Application
 
     attendees = event.attendees.try(&.map { |a| a[:email] }) || [] of String
     placeos_client = get_placeos_client
-    system = placeos_client.systems.fetch(event.system_id)
-    attendees << system.email.not_nil!
+
+    system_id = event.system_id
+    if system_id
+      system = placeos_client.systems.fetch(system_id)
+      attendees << system.email.not_nil!
+    end
+
     attendees.uniq!
 
     zone = if tz = event.timezone
@@ -98,59 +103,64 @@ class Events < Application
       description: event.body
     )
 
-    # Grab the list of externals that might be attending
-    attending = event.attendees.try(&.select { |attendee|
-      attendee[:visit_expected]
-    })
-
     # Update PlaceOS with an signal "/bookings/event/changed"
-    spawn do
-      placeos_client.root.signal("bookings/event/changed", {
-        action:    :create,
-        system_id: event.system_id,
-        event_id:  gevent.id,
-        host:      host,
-        resource:  system.email,
+    if system
+      sys = system.not_nil!
+      # Grab the list of externals that might be attending
+      attending = event.attendees.try(&.select { |attendee|
+        attendee[:visit_expected]
       })
-    end
 
-    # Save custom data
-    if (ext_data = event.extension_data) || (attending && !attending.empty?)
-      meta = EventMetadata.new
-      meta.system_id = system.id.not_nil!
-      meta.event_id = gevent.id
-      meta.event_start = event_start
-      meta.event_end = event_end
-      meta.resource_calendar = system.email.not_nil!
-      meta.host_email = host
-      meta.extension_data = ext_data
-      meta.save!
-
-      if attending
-        # Create guests
-        attending.each do |attendee|
-          email = attendee[:email].strip.downcase
-          guest = Guest.find(email) || Guest.new
-          guest.email = email
-          guest.name ||= attendee[:name]
-          guest.save!
-        end
-
-        # Create attendees
-        attending.each do |attendee|
-          email = attendee[:email].strip.downcase
-          attend = Attendee.new
-          attend.event_id = meta.id.not_nil!
-          attend.guest_id = email
-          attend.visit_expected = true
-          attend.save!
-        end
+      spawn do
+        placeos_client.root.signal("bookings/event/changed", {
+          action:    :create,
+          system_id: event.system_id,
+          event_id:  gevent.id,
+          host:      host,
+          resource:  sys.email,
+        })
       end
 
-      render json: standard_event(system.email, system, gevent, meta)
+      # Save custom data
+      if (ext_data = event.extension_data) || (attending && !attending.empty?)
+        meta = EventMetadata.new
+        meta.system_id = sys.id.not_nil!
+        meta.event_id = gevent.id
+        meta.event_start = event_start
+        meta.event_end = event_end
+        meta.resource_calendar = sys.email.not_nil!
+        meta.host_email = host
+        meta.extension_data = ext_data
+        meta.save!
+
+        if attending
+          # Create guests
+          attending.each do |attendee|
+            email = attendee[:email].strip.downcase
+            guest = Guest.find(email) || Guest.new
+            guest.email = email
+            guest.name ||= attendee[:name]
+            guest.save!
+          end
+
+          # Create attendees
+          attending.each do |attendee|
+            email = attendee[:email].strip.downcase
+            attend = Attendee.new
+            attend.event_id = meta.id.not_nil!
+            attend.guest_id = email
+            attend.visit_expected = true
+            attend.save!
+          end
+        end
+
+        render json: standard_event(sys.email, sys, gevent, meta)
+      end
+
+      render json: standard_event(sys.email, sys, gevent, nil)
     end
 
-    render json: standard_event(system.email, system, gevent, nil)
+    render json: standard_event(host, nil, gevent, nil)
   end
 
   class UpdateCalEvent
