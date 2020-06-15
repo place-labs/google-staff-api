@@ -103,7 +103,7 @@ class Events < Application
       description: event.body
     )
 
-    # Update PlaceOS with an signal "/bookings/event/changed"
+    # Update PlaceOS with an signal "/staff/event/changed"
     if system
       sys = system.not_nil!
       # Grab the list of externals that might be attending
@@ -112,7 +112,7 @@ class Events < Application
       })
 
       spawn do
-        placeos_client.root.signal("bookings/event/changed", {
+        placeos_client.root.signal("staff/event/changed", {
           action:    :create,
           system_id: event.system_id,
           event_id:  gevent.id,
@@ -274,10 +274,10 @@ class Events < Application
         meta.save!
       end
 
-      # Update PlaceOS with an signal "bookings/event/changed"
+      # Update PlaceOS with an signal "staff/event/changed"
       spawn do
         sys = system.not_nil!
-        placeos_client.root.signal("bookings/event/changed", {
+        placeos_client.root.signal("staff/event/changed", {
           action:    :update,
           system_id: sys.id,
           event_id:  event_id,
@@ -375,7 +375,7 @@ class Events < Application
       calendar.delete(event_id, cal_id, notify_option)
 
       spawn do
-        placeos_client.root.signal("bookings/event/changed", {
+        placeos_client.root.signal("staff/event/changed", {
           action:    :cancelled,
           system_id: system.id,
           event_id:  event_id,
