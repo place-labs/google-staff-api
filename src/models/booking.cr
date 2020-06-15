@@ -1,13 +1,14 @@
 class Booking < Granite::Base
   connection pg
-  table metadata
+  table booking
 
-  column id : Int64, primary: true
+  column id : Int64, primary: true # Primary key, defaults to AUTO INCREMENT
 
   column user_id : String
   column user_email : String
   column user_name : String
   column asset_id : String
+  column zones : Array(String)
 
   column booking_type : String
   column booking_start : Time

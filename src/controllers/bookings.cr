@@ -9,11 +9,19 @@ class Bookings < Application
     starting = Time.unix(query_params["period_start"].to_i64)
     ending = Time.unix(query_params["period_end"].to_i64)
     booking_type = query_params["type"]
+    zones = Set.new((query_params["zones"]? || "").split(',').map(&.strip).reject(&.empty?)).to_a
 
     results = [] of Booking
+
+    # Bookings have the requested zones
+    # https://www.postgresql.org/docs/9.1/arrays.html#ARRAYS-SEARCHING
+    query = String.build do |str|
+      zones.each { |zone| str << " AND ? = ANY (zones)" }
+    end
+
     Booking.all(
-      "WHERE event_id IN (SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ? AND booking_type = ?)",
-      [ending, starting, booking_type]
+      "WHERE booking_start <= ? AND booking_end >= ? AND booking_type = ?#{query}",
+      [ending, starting, booking_type] + zones
     ).each { |booking| results << booking }
 
     render json: results

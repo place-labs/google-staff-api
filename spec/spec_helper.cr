@@ -65,4 +65,5 @@ end
 
 EventMetadata.migrator.drop_and_create
 Attendee.migrator.drop_and_create
+Booking.migrator.drop_and_create
 Guest.migrator.drop_and_create
