@@ -16,8 +16,8 @@ Spec.before_suite &->WebMock.reset
 Spec.before_each &->WebMock.reset
 
 # Grab the models generator
-require "models"
-require "../lib/models/spec/generator"
+require "placeos-models"
+require "../lib/placeos-models/spec/generator"
 
 # Yield an authenticated user, and a header with Authorization bearer set
 def authentication
