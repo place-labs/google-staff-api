@@ -58,7 +58,7 @@ describe Guests do
 
     meta = generate_event
     guest = generate_guest
-    attend = guest.attendee_for(meta.id.not_nil!)
+    guest.attendee_for(meta.id.not_nil!)
 
     # instantiate the controller
     response = IO::Memory.new
@@ -82,7 +82,7 @@ describe Guests do
   it "should return guests visiting today in a subset of rooms" do
     meta = generate_event
     guest = generate_guest
-    attend = guest.attendee_for(meta.id.not_nil!)
+    guest.attendee_for(meta.id.not_nil!)
 
     begin
       {"sys-rJQQlR4Cn7", "sys_id"}.each_with_index do |system_id, index|
@@ -139,7 +139,7 @@ describe Guests do
     app = Guests.new(context)
 
     meta = generate_event
-    attend = guest1.attendee_for(meta.id.not_nil!)
+    guest1.attendee_for(meta.id.not_nil!)
 
     # Test the instance method of the controller
     app.show

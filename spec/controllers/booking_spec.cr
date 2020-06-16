@@ -42,7 +42,7 @@ describe Bookings do
     results = [] of Booking
 
     query = String.build do |str|
-      zones.each { |zone| str << " AND ? = ANY (zones)" }
+      zones.each { |_zone| str << " AND ? = ANY (zones)" }
     end
 
     Booking.all(

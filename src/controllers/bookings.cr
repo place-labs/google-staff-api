@@ -16,7 +16,7 @@ class Bookings < Application
     # Bookings have the requested zones
     # https://www.postgresql.org/docs/9.1/arrays.html#ARRAYS-SEARCHING
     query = String.build do |str|
-      zones.each { |zone| str << " AND ? = ANY (zones)" }
+      zones.each { |_zone| str << " AND ? = ANY (zones)" }
     end
 
     Booking.all(
