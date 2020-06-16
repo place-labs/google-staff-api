@@ -11,11 +11,13 @@ class Booking < Granite::Base
   column zones : Array(String)
 
   column booking_type : String
-  column booking_start : Time
-  column booking_end : Time
+  column booking_start : Int64
+  column booking_end : Int64
+  column timezone : String?
 
   column title : String?
   column description : String?
+  column checked_in : Bool = false
 
   column ext_data : String?
 

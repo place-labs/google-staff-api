@@ -113,9 +113,9 @@ abstract class Application < ActionController::Base
     event_end = event.end.try { |time| (time.date_time || time.date).try &.to_unix }
 
     # Ensure metadata is in sync
-    if metadata && (event_start != metadata.event_start.try(&.to_unix) || (event_end && event_end != metadata.event_end.try(&.to_unix)))
-      metadata.event_start = start_time = Time.unix(event_start)
-      metadata.event_end = event_end ? Time.unix(event_end) : (start_time + 24.hours)
+    if metadata && (event_start != metadata.event_start || (event_end && event_end != metadata.event_end))
+      metadata.event_start = start_time = event_start
+      metadata.event_end = event_end ? event_end : (start_time + 24.hours.to_i)
       metadata.save
     end
 

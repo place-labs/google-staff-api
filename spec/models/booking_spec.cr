@@ -10,8 +10,8 @@ describe Booking do
     booking.booking_type = "desk"
     booking.title = "best desk"
     booking.zones = ["zone-1234", "zone-4567", "zone-890"]
-    booking.booking_start = 5.minutes.from_now
-    booking.booking_end = 40.minutes.from_now
+    booking.booking_start = 5.minutes.from_now.to_unix
+    booking.booking_end = 40.minutes.from_now.to_unix
 
     begin
       booking.save!

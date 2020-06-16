@@ -49,7 +49,7 @@ class Guest < Granite::Base
       EventMetadata.all(
         %(WHERE event_end >= ? AND id IN (
           SELECT event_id FROM attendee WHERE guest_id = ?
-        ) ORDER BY event_start ASC LIMIT ?), [Time.utc, self.id, limit]
+        ) ORDER BY event_start ASC LIMIT ?), [Time.utc.to_unix, self.id, limit]
       ).map { |e| e }
     else
       EventMetadata.all(
@@ -95,8 +95,8 @@ class Guest < Granite::Base
 
   def attending_today?(timezone)
     now = Time.local(timezone)
-    morning = now.at_beginning_of_day
-    tonight = now.at_end_of_day
+    morning = now.at_beginning_of_day.to_unix
+    tonight = now.at_end_of_day.to_unix
 
     Attendee.all(
       %(WHERE guest_id = ? AND event_id IN (

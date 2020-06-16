@@ -48,8 +48,8 @@ def generate_event
   meta.host_email = "user@org.com"
   meta.resource_calendar = "room2@example.com"
 
-  meta.event_start = Time.utc
-  meta.event_end = 5.minutes.from_now
+  meta.event_start = Time.utc.to_unix
+  meta.event_end = 5.minutes.from_now.to_unix
   result = meta.save
   result.should eq true
   meta

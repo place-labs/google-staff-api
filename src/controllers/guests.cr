@@ -8,8 +8,8 @@ class Guests < Application
     query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
     period_start = query_params["period_start"]?
     if period_start
-      starting = Time.unix period_start.to_i64
-      ending = Time.unix query_params["period_end"].to_i64
+      starting = period_start.to_i64
+      ending = query_params["period_end"].to_i64
 
       # Return the guests visiting today
       attendees = {} of String => Attendee

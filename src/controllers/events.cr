@@ -126,8 +126,8 @@ class Events < Application
         meta = EventMetadata.new
         meta.system_id = sys.id.not_nil!
         meta.event_id = gevent.id
-        meta.event_start = event_start
-        meta.event_end = event_end
+        meta.event_start = event_start.to_unix
+        meta.event_end = event_end.to_unix
         meta.resource_calendar = sys.email.not_nil!
         meta.host_email = host
         meta.extension_data = ext_data
@@ -235,8 +235,8 @@ class Events < Application
 
     event_start = changes.event_start
     event_end = changes.event_end
-    event_start = event_start ? Time.unix(event_start).in(zone) : (event.start.date_time || event.start.date).not_nil!
-    event_end = event_end ? Time.unix(event_end).in(zone) : (event.end.try(&.date_time) || event.end.try(&.date)).not_nil!
+    event_start = event_start ? event_start : (event.start.date_time || event.start.date).not_nil!.to_unix
+    event_end = event_end ? event_end : (event.end.try(&.date_time) || event.end.try(&.date)).not_nil!.to_unix
     all_day = !!event.start.date
     priv = if changes.private == nil
              event.visibility.in?({"private", "confidential"})
@@ -246,8 +246,8 @@ class Events < Application
 
     updated_event = calendar.update(
       event.id,
-      event_start: event_start,
-      event_end: event_end,
+      event_start: Time.unix(event_start).to_local_in(zone),
+      event_end: Time.unix(event_end).to_local_in(zone),
       calendar_id: host,
       attendees: attendees,
       all_day: all_day,

@@ -12,8 +12,8 @@ class EventMetadata < Granite::Base
 
   column host_email : String
   column resource_calendar : String
-  column event_start : Time
-  column event_end : Time
+  column event_start : Int64
+  column event_end : Int64
 
   column ext_data : String?
 

@@ -6,8 +6,8 @@ class Bookings < Application
   getter booking : Booking?
 
   def index
-    starting = Time.unix(query_params["period_start"].to_i64)
-    ending = Time.unix(query_params["period_end"].to_i64)
+    starting = query_params["period_start"].to_i64
+    ending = query_params["period_end"].to_i64
     booking_type = query_params["type"]
     zones = Set.new((query_params["zones"]? || "").split(',').map(&.strip).reject(&.empty?)).to_a
 
