@@ -57,7 +57,10 @@ class Guests < Application
     guest = current_guest
     changes = Guest.from_json(request.body.as(IO))
     {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous] %}
-      guest.{{key.id}} = changes.{{key.id}}
+      begin
+        guest.{{key.id}} = changes.{{key.id}}
+      rescue NilAssertionError
+      end
     {% end %}
 
     # merge changes into extension data

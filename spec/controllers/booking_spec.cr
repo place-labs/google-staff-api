@@ -67,5 +67,70 @@ describe Bookings do
     data = response.to_s
     data = JSON.parse(data.split("\r\n").reject(&.empty?)[-1])
     data.as_a.size.should eq(2)
+
+    # filter by zones
+    response = IO::Memory.new
+    route = "/api/staff/v1/bookings?period_start=#{starting}&period_end=#{ending}&type=desk&zones=zone-890,zone-4127"
+    Bookings.new(context("GET", route, HEADERS, response_io: response)).index
+
+    data = JSON.parse(response.to_s.split("\r\n").reject(&.empty?)[-1])
+    data.as_a.size.should eq(1)
+  end
+
+  it "should delete a booking" do
+    # instantiate the controller
+    context = context("DELETE", "/api/staff/v1/bookings/#{booking2.id}/", HEADERS)
+    context.route_params = {"id" => booking2.id.not_nil!.to_s}
+    app = Bookings.new(context)
+
+    WebMock.stub(:post, "https://example.place.technology/api/engine/v2/signal").to_return(body: "")
+
+    # Test the instance method of the controller
+    app.destroy
+
+    # Check only one is returned
+    response = IO::Memory.new
+    starting = 5.minutes.from_now.to_unix
+    ending = 40.minutes.from_now.to_unix
+    route = "/api/staff/v1/bookings?period_start=#{starting}&period_end=#{ending}&type=desk"
+    Bookings.new(context("GET", route, HEADERS, response_io: response)).index
+
+    data = JSON.parse(response.to_s.split("\r\n").reject(&.empty?)[-1])
+    data.as_a.size.should eq(1)
+  end
+
+  it "should create and update a booking" do
+    starting = 5.minutes.from_now.to_unix
+    ending = 40.minutes.from_now.to_unix
+
+    # instantiate the controller
+    body = IO::Memory.new
+    body << %({"asset_id":"some_desk","booking_start":#{starting},"booking_end":#{ending},"booking_type":"desk"})
+    body.rewind
+    response = IO::Memory.new
+    context = context("POST", "/api/staff/v1/bookings/", HEADERS, body, response_io: response)
+    app = Bookings.new(context)
+    app.create
+
+    WebMock.stub(:post, "https://example.place.technology/api/engine/v2/signal").to_return(body: "")
+
+    data = response.to_s.split("\r\n").reject(&.empty?)[-1]
+    created = Booking.from_json(data)
+    created.asset_id.should eq("some_desk")
+    created.booking_start.should eq(starting)
+    created.booking_end.should eq(ending)
+
+    # instantiate the controller
+    body = IO::Memory.new
+    body << %({"extension_data":{"other":"stuff"}})
+    body.rewind
+    response = IO::Memory.new
+    context = context("PATCH", "/api/staff/v1/bookings/#{created.id}", HEADERS, body, response_io: response)
+    context.route_params = {"id" => created.id.to_s}
+    app = Bookings.new(context)
+    app.update
+
+    updated = Booking.from_json(response.to_s.split("\r\n").reject(&.empty?)[-1])
+    updated.extension_data["other"].should eq("stuff")
   end
 end

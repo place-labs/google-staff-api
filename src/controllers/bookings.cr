@@ -58,8 +58,11 @@ class Bookings < Application
     booking = current_booking
     changes = Booking.from_json(request.body.as(IO))
 
-    {% for key in [:asset_id, :booking_start, :booking_end, :title, :description] %}
-      booking.{{key.id}} = changes.{{key.id}}
+    {% for key in [:asset_id, :booking_start, :booking_end, :title, :description, :checked_in] %}
+      begin
+        booking.{{key.id}} = changes.{{key.id}}
+      rescue NilAssertionError
+      end
     {% end %}
 
     # merge changes into extension data

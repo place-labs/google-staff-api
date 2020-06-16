@@ -8,7 +8,7 @@ class Booking < Granite::Base
   column user_email : String
   column user_name : String
   column asset_id : String
-  column zones : Array(String)
+  column zones : Array(String) = [] of String
 
   column booking_type : String
   column booking_start : Int64
