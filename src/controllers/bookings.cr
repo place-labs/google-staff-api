@@ -1,8 +1,8 @@
 class Bookings < Application
   base "/api/staff/v1/bookings"
 
-  before_action :find_booking, only: [:show, :update, :update_alt, :destroy]
-  before_action :check_access, only: [:update, :update_alt, :destroy]
+  before_action :find_booking, only: [:show, :update, :update_alt, :destroy, :check_in, :approve, :reject]
+  before_action :check_access, only: [:update, :update_alt, :destroy, :check_in]
   getter booking : Booking?
 
   def index
@@ -10,6 +10,8 @@ class Bookings < Application
     ending = query_params["period_end"].to_i64
     booking_type = query_params["type"]
     zones = Set.new((query_params["zones"]? || "").split(',').map(&.strip).reject(&.empty?)).to_a
+    user_id = query_params["user"]?
+    user_id = user_token.id if user_id == "current"
 
     results = [] of Booking
 
@@ -17,6 +19,10 @@ class Bookings < Application
     # https://www.postgresql.org/docs/9.1/arrays.html#ARRAYS-SEARCHING
     query = String.build do |str|
       zones.each { |_zone| str << " AND ? = ANY (zones)" }
+      if user_id
+        str << " AND user_id = ?"
+        zones << user_id
+      end
     end
 
     Booking.all(
@@ -58,7 +64,7 @@ class Bookings < Application
     booking = current_booking
     changes = Booking.from_json(request.body.as(IO))
 
-    {% for key in [:asset_id, :booking_start, :booking_end, :title, :description, :checked_in] %}
+    {% for key in [:asset_id, :zones, :booking_start, :booking_end, :title, :description, :checked_in] %}
       begin
         booking.{{key.id}} = changes.{{key.id}}
       rescue NilAssertionError
@@ -71,25 +77,35 @@ class Bookings < Application
     booking.extension_data = nil
     booking.ext_data = data.to_json
 
+    # reset the checked-in state
+    booking.checked_in = false
+    booking.rejected = false
+    booking.approved = false
+
     # TODO:: check there isn't a clashing booking
 
-    if booking.save
-      spawn do
-        get_placeos_client.root.signal("staff/booking/changed", {
-          action:       :update,
-          id:           booking.id,
-          booking_type: booking.booking_type,
-          resource:     booking.asset_id,
-        })
-      end
-
-      render json: booking
-    else
-      render json: booking.errors.map(&.to_s), status: :unprocessable_entity
-    end
+    update_booking(booking)
   end
 
   put "/:id", :update_alt { update }
+
+  post "/:id/approve", :approve do
+    booking = current_booking
+    set_approver(booking, true)
+    update_booking(booking)
+  end
+
+  post "/:id/reject", :reject do
+    booking = current_booking
+    set_approver(booking, false)
+    update_booking(booking)
+  end
+
+  post "/:id/check_in", :check_in do
+    booking = current_booking
+    booking.checked_in = true
+    update_booking(booking)
+  end
 
   def show
     render json: current_booking
@@ -130,5 +146,31 @@ class Bookings < Application
     if current_booking.user_id != user.id
       head :forbidden unless user.is_admin? || user.is_support?
     end
+  end
+
+  def update_booking(booking)
+    if booking.save
+      spawn do
+        get_placeos_client.root.signal("staff/booking/changed", {
+          action:       :update,
+          id:           booking.id,
+          booking_type: booking.booking_type,
+          resource:     booking.asset_id,
+        })
+      end
+
+      render json: booking
+    else
+      render json: booking.errors.map(&.to_s), status: :unprocessable_entity
+    end
+  end
+
+  def set_approver(booking, approved : Bool)
+    user = user_token.user
+    booking.approver_id = user_token.id
+    booking.approver_email = user.email
+    booking.approver_name = user.name
+    booking.approved = approved
+    booking.rejected = !approved
   end
 end
