@@ -6,7 +6,7 @@ shards:
 
   action-controller:
     git: https://github.com/spider-gazelle/action-controller.git
-    version: 3.1.5
+    version: 3.1.6
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
@@ -14,11 +14,11 @@ shards:
 
   ameba:
     git: https://github.com/veelenga/ameba.git
-    version: 0.12.1
+    version: 0.13.0
 
   bindata:
     git: https://github.com/spider-gazelle/bindata.git
-    version: 1.5.4
+    version: 1.5.5
 
   bisect:
     git: https://github.com/spider-gazelle/bisect.git
@@ -50,7 +50,7 @@ shards:
 
   google:
     git: https://github.com/PlaceOS/google.git
-    version: 2.0.0
+    version: 2.2.1
 
   granite:
     git: https://github.com/amberframework/granite.git
@@ -70,11 +70,11 @@ shards:
 
   neuroplastic:
     git: https://github.com/spider-gazelle/neuroplastic.git
-    version: 1.4.1
+    version: 1.5.0
 
   openssl_ext:
     git: https://github.com/stakach/openssl_ext.git
-    version: 1.2.1
+    version: 1.2.2
 
   pg:
     git: https://github.com/will/crystal-pg.git
@@ -82,15 +82,15 @@ shards:
 
   placeos:
     git: https://github.com/placeos/crystal-client.git
-    version: 1.1.0+git.commit.2321be9099479507376697fa76f8d48df5ad6734
+    version: 1.2.0+git.commit.b376587ed90e593be88993b39512968b6152a71c
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 2.0.3
+    version: 2.1.1
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
-    version: 2.1.0
+    version: 2.2.0
 
   rethinkdb:
     git: https://github.com/aca-labs/crystal-rethinkdb.git

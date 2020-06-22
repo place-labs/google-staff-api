@@ -10,7 +10,13 @@ class Calendars < Application
 
     # TODO:: perform availability request
 
-    render json: candidates
+    results = candidates.map { |email, system|
+      {
+        id: email,
+        system: system
+      }
+    }
+    render json: results
   end
 
   # configure the database
