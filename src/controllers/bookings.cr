@@ -92,19 +92,19 @@ class Bookings < Application
   post "/:id/approve", :approve do
     booking = current_booking
     set_approver(booking, true)
-    update_booking(booking)
+    update_booking(booking, "approved")
   end
 
   post "/:id/reject", :reject do
     booking = current_booking
     set_approver(booking, false)
-    update_booking(booking)
+    update_booking(booking, "approved")
   end
 
   post "/:id/check_in", :check_in do
     booking = current_booking
-    booking.checked_in = true
-    update_booking(booking)
+    booking.checked_in = params["state"]? != "false"
+    update_booking(booking, "checked_in")
   end
 
   def show
@@ -148,10 +148,10 @@ class Bookings < Application
     end
   end
 
-  def update_booking(booking)
+  def update_booking(booking, signal = "changed")
     if booking.save
       spawn do
-        get_placeos_client.root.signal("staff/booking/changed", {
+        get_placeos_client.root.signal("staff/booking/#{signal}", {
           action:       :update,
           id:           booking.id,
           booking_type: booking.booking_type,
