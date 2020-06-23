@@ -7,9 +7,22 @@ class Calendars < Application
 
   get "/availability", :availability do
     candidates = matching_calendar_ids
+    calendars = candidates.keys
+    render(json: [] of String) if calendars.empty?
 
-    # TODO:: perform availability request
+    # Grab the user
+    user = user_token.user.email
+    calendar = calendar_for(user)
 
+    # perform availability request
+    period_start = Time.unix(query_params["period_start"].to_i64)
+    period_end = Time.unix(query_params["period_end"].to_i64)
+    busy = calendar.availability(calendars, period_start, period_end)
+
+    # Remove any rooms that have overlapping bookings
+    busy.each { |status| candidates.delete(status.calendar) unless status.availability.empty? }
+
+    # Return the results
     results = candidates.map { |email, system|
       {
         id: email,
