@@ -21,9 +21,9 @@ class Booking < Granite::Base
 
   column rejected : Bool = false
   column approved : Bool = false
-  column approver_id : String
-  column approver_email : String
-  column approver_name : String
+  column approver_id : String?
+  column approver_email : String?
+  column approver_name : String?
 
   column ext_data : String?
 
