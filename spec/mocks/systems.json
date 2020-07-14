@@ -4,7 +4,7 @@
         "description": null,
         "email": "room1@example.com",
         "capacity": 10,
-        "features": "",
+        "features": [],
         "bookable": true,
         "installed_ui_devices": 0,
         "zones": [
@@ -26,7 +26,7 @@
         "description": null,
         "email": "room2@example.com",
         "capacity": 10,
-        "features": "",
+        "features": [],
         "bookable": true,
         "installed_ui_devices": 0,
         "zones": [
@@ -49,7 +49,7 @@
         "description": null,
         "email": "room3@example.com",
         "capacity": 4,
-        "features": "",
+        "features": [],
         "bookable": true,
         "installed_ui_devices": 0,
         "zones": [
@@ -72,7 +72,7 @@
         "description": null,
         "email": "room4@example.com",
         "capacity": 20,
-        "features": "",
+        "features": [],
         "bookable": true,
         "installed_ui_devices": 0,
         "zones": [
