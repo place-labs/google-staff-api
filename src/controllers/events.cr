@@ -1,10 +1,6 @@
 class Events < Application
   base "/api/staff/v1/events"
 
-  before_action :check_attending, only: [:approve, :reject]
-  @resource_email : String? = nil
-  @resource_system : PlaceOS::Client::API::Models::System? = nil
-
   def index
     period_start = Time.unix(query_params["period_start"].to_i64)
     period_end = Time.unix(query_params["period_end"].to_i64)
@@ -453,10 +449,19 @@ class Events < Application
 
   def update_status(status)
     event_id = route_params["id"]
-    cal_id = @resource_email.not_nil!
-    system = @resource_system.not_nil!
-    user_id = user_token.user.email
+    system_id = query_params["system_id"]
 
+    # Check this system has an associated resource
+    system = get_placeos_client.systems.fetch(system_id)
+    cal_id = system.email
+    head(:not_found) unless cal_id
+
+    # Check the event was in the calendar
+    event = get_event(event_id, cal_id)
+    head(:not_found) unless event
+
+    # Update the event (user must be a resource approver)
+    user_id = user_token.user.email
     calendar = calendar_for(user_id)
     updated_event = calendar.update(
       event_id,
@@ -467,22 +472,8 @@ class Events < Application
       }]
     )
 
+    # Return the full event details
     metadata = EventMetadata.find("#{system.id}-#{event_id}")
     render json: standard_event(cal_id, system, updated_event, metadata)
-  end
-
-  def check_attending
-    event_id = route_params["id"]
-    system_id = query_params["system_id"]
-
-    system = get_placeos_client.systems.fetch(system_id)
-    cal_id = system.email
-    head(:not_found) unless cal_id
-
-    event = get_event(event_id, cal_id)
-    head(:not_found) unless event
-
-    @resource_email = cal_id
-    @resource_system = system
   end
 end
