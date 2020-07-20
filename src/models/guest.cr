@@ -87,9 +87,9 @@ class Guest < Granite::Base
 
   def transform_extension_data
     if extension_data = @extension_data
-      @ext_data = extension_data.to_json
-    elsif @ext_data.nil? || @ext_data.try &.empty?
-      @ext_data = "{}"
+      self.ext_data = extension_data.to_json
+    elsif self.ext_data.presence.nil?
+      self.ext_data = "{}"
     end
   end
 

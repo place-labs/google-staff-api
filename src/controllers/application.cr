@@ -138,7 +138,7 @@ abstract class Application < ActionController::Base
       all_day:        !!event.start.date,
       attendees:      attendees,
       system:         system,
-      extension_data: (metadata.try &.extension_data) || {} of Nil => Nil,
+      extension_data: metadata.try &.extension_data,
     }
   end
 
