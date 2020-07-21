@@ -61,7 +61,9 @@ class Events < Application
     property attendees : Array(NamedTuple(
       name: String?,
       email: String,
-      visit_expected: Bool?))?
+      visit_expected: Bool?,
+      resource: Bool?,
+    ))?
 
     property extension_data : JSON::Any?
   end
@@ -79,7 +81,7 @@ class Events < Application
     system_id = event.system_id
     if system_id
       system = placeos_client.systems.fetch(system_id)
-      attendees << system.email.not_nil!
+      attendees << system.email.presence.not_nil!
     end
 
     attendees.uniq!
@@ -191,7 +193,9 @@ class Events < Application
     property attendees : Array(NamedTuple(
       name: String?,
       email: String,
-      visit_expected: Bool?))?
+      visit_expected: Bool?,
+      resource: Bool?,
+    ))?
 
     property extension_data : JSON::Any?
   end
@@ -206,10 +210,10 @@ class Events < Application
                found = get_user_calendars.reject { |cal| cal[:id] != user_cal }.first?
                head(:not_found) unless found
                user_cal
-             elsif system_id = (query_params["system_id"]? || changes.system_id)
+             elsif system_id = (query_params["system_id"]? || changes.system_id).presence
                system = placeos_client.systems.fetch(system_id)
                # TODO:: return 404 if system not found
-               sys_cal = system.email
+               sys_cal = system.email.presence
                head(:not_found) unless sys_cal
                sys_cal
              else
@@ -223,15 +227,18 @@ class Events < Application
     host = event.organizer.try &.email || user
 
     # TODO:: check permisions as may be able to edit on behalf of the user
-
     existing_attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
     head(:forbidden) unless user == host || user.in?(existing_attendees)
     calendar = calendar_for(host)
 
-    # Update event
+    # Check if attendees need updating
+    update_attendees = !changes.attendees.nil?
     attendees = changes.attendees.try(&.map { |a| a[:email] }) || existing_attendees
     attendees << cal_id
     attendees.uniq!
+
+    # Attendees that need to be deleted:
+    remove_attendees = existing_attendees - attendees
 
     zone = if tz = changes.timezone
              Time::Location.load(tz)
@@ -252,12 +259,34 @@ class Events < Application
              changes.private
            end
 
+    # are we moving the event room?
+    changing_room = system_id != (changes.system_id.presence || system_id)
+    if changing_room
+      new_system_id = changes.system_id.presence.not_nil!
+
+      new_system = placeos_client.systems.fetch(new_system_id)
+      # TODO:: return 404 if system not found
+      new_sys_cal = new_system.email.presence
+      head(:not_found) unless new_sys_cal
+
+      # Check this room isn't already invited
+      head(:conflict) if attendees.includes?(new_sys_cal)
+
+      attendees.delete(cal_id)
+      attendees << new_sys_cal
+      update_attendees = true
+      remove_attendees = [] of String
+
+      cal_id = new_sys_cal
+      system = new_system
+    end
+
     updated_event = calendar.update(
       event.id,
       event_start: Time.unix(event_start).to_local_in(zone),
       event_end: Time.unix(event_end).to_local_in(zone),
       calendar_id: host,
-      attendees: attendees,
+      attendees: update_attendees ? attendees : nil,
       all_day: all_day,
       visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
       location: changes.location || event.location,
@@ -266,7 +295,20 @@ class Events < Application
     )
 
     if system
-      meta = EventMetadata.find("#{system.id}-#{event.id}") || EventMetadata.new
+      meta = if changing_room
+               old_meta = EventMetadata.find("#{system.id}-#{event.id}")
+               if old_meta
+                 new_meta = EventMetadata.new
+                 new_meta.extension_data = old_meta.extension_data
+                 old_meta.destroy
+                 new_meta
+               else
+                 EventMetadata.new
+               end
+             else
+               EventMetadata.find("#{system.id}-#{event.id}") || EventMetadata.new
+             end
+
       meta.system_id = system.id.not_nil!
       meta.event_id = event.id
       meta.event_start = event_start
@@ -280,6 +322,44 @@ class Events < Application
         meta.extension_data = nil
         meta.ext_data = data.to_json
         meta.save!
+      elsif changing_room || update_attendees
+        meta.save!
+      end
+
+      # Grab the list of externals that might be attending
+      if update_attendees
+        if !remove_attendees.empty?
+          existing = meta.attendees.to_a
+          remove_attendees.each do |email|
+            existing.select { |attend| attend.email == email }.each(&.destroy)
+          end
+        end
+
+        attending = changes.try &.attendees.try(&.reject { |attendee|
+          # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
+          attendee[:visit_expected].nil?
+        })
+
+        if attending
+          # Create guests
+          attending.each do |attendee|
+            email = attendee[:email].strip.downcase
+            guest = Guest.find(email) || Guest.new
+            guest.email = email
+            guest.name ||= attendee[:name]
+            guest.save!
+          end
+
+          # Create attendees
+          attending.each do |attendee|
+            email = attendee[:email].strip.downcase
+            attend = Attendee.new
+            attend.event_id = meta.id.not_nil!
+            attend.guest_id = email
+            attend.visit_expected = true
+            attend.save!
+          end
+        end
       end
 
       # Update PlaceOS with an signal "staff/event/changed"
@@ -292,32 +372,6 @@ class Events < Application
           host:      host,
           resource:  sys.email,
         })
-      end
-
-      # Grab the list of externals that might be attending
-      attending = changes.try &.attendees.try(&.reject { |attendee|
-        attendee[:visit_expected].nil?
-      })
-
-      if attending
-        # Create guests
-        attending.each do |attendee|
-          email = attendee[:email].strip.downcase
-          guest = Guest.find(email) || Guest.new
-          guest.email = email
-          guest.name ||= attendee[:name]
-          guest.save!
-        end
-
-        # Create attendees
-        attending.each do |attendee|
-          email = attendee[:email].strip.downcase
-          attend = Attendee.new
-          attend.event_id = meta.id.not_nil!
-          attend.guest_id = email
-          attend.visit_expected = true
-          attend.save!
-        end
       end
 
       render json: standard_event(cal_id, system, updated_event, meta)
