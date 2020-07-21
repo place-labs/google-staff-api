@@ -122,7 +122,8 @@ class Events < Application
       end
 
       # Save custom data
-      if (ext_data = event.extension_data) || (attending && !attending.empty?)
+      ext_data = event.extension_data
+      if ext_data || (attending && !attending.empty?)
         meta = EventMetadata.new
         meta.system_id = sys.id.not_nil!
         meta.event_id = gevent.id
@@ -132,6 +133,8 @@ class Events < Application
         meta.host_email = host
         meta.extension_data = ext_data
         meta.save!
+
+        Log.info { "saving extension data for event #{gevent.id} in #{sys.id}" }
 
         if attending
           # Create guests
@@ -157,8 +160,12 @@ class Events < Application
         render json: standard_event(sys.email, sys, gevent, meta)
       end
 
+      Log.info { "no extension data for event #{gevent.id} in #{sys.id}, #{ext_data}" }
+
       render json: standard_event(sys.email, sys, gevent, nil)
     end
+
+    Log.info { "no system provided for event #{gevent.id}" }
 
     render json: standard_event(host, nil, gevent, nil)
   end
@@ -216,6 +223,7 @@ class Events < Application
     host = event.organizer.try &.email || user
 
     # TODO:: check permisions as may be able to edit on behalf of the user
+
     existing_attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
     head(:forbidden) unless user == host || user.in?(existing_attendees)
     calendar = calendar_for(host)
@@ -467,8 +475,8 @@ class Events < Application
       event_id,
       calendar_id: cal_id,
       attendees: [{
-        email: cal_id,
-        responseStatus: status
+        email:          cal_id,
+        responseStatus: status,
       }]
     )
 

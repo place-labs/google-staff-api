@@ -25,8 +25,8 @@ class Calendars < Application
     # Return the results
     results = candidates.map { |email, system|
       {
-        id: email,
-        system: system
+        id:     email,
+        system: system,
       }
     }
     render json: results
