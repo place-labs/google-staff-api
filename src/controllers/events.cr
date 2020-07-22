@@ -54,6 +54,7 @@ class Events < Application
     property host : String?  # organizer
     property private : Bool? # visibility
 
+    property all_day : Bool?
     property event_start : Int64
     property event_end : Int64
     property timezone : String?
@@ -99,6 +100,7 @@ class Events < Application
       event_end: event_end,
       calendar_id: host,
       attendees: attendees,
+      all_day: event.all_day || false,
       visibility: event.private ? Google::Visibility::Private : Google::Visibility::Default,
       location: event.location,
       summary: event.title,
@@ -186,6 +188,7 @@ class Events < Application
     property host : String?  # organizer
     property private : Bool? # visibility
 
+    property all_day : Bool?
     property event_start : Int64?
     property event_end : Int64?
     property timezone : String?
@@ -252,7 +255,7 @@ class Events < Application
     event_end = changes.event_end
     event_start = event_start ? event_start : (event.start.date_time || event.start.date).not_nil!.to_unix
     event_end = event_end ? event_end : (event.end.try(&.date_time) || event.end.try(&.date)).not_nil!.to_unix
-    all_day = !!event.start.date
+    all_day = changes.all_day.nil? ? !!event.start.date : changes.all_day
     priv = if changes.private == nil
              event.visibility.in?({"private", "confidential"})
            else
