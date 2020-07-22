@@ -270,7 +270,7 @@ class Events < Application
       head(:not_found) unless new_sys_cal
 
       # Check this room isn't already invited
-      head(:conflict) if attendees.includes?(new_sys_cal)
+      head(:conflict) if existing_attendees.includes?(new_sys_cal)
 
       attendees.delete(cal_id)
       attendees << new_sys_cal

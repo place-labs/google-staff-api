@@ -9,4 +9,3 @@ install:
   - shards install
 script:
   - crystal spec
-  - bin/ameba
