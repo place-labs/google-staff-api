@@ -6,7 +6,7 @@ shards:
 
   action-controller:
     git: https://github.com/spider-gazelle/action-controller.git
-    version: 3.3.0
+    version: 3.4.0
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
@@ -66,7 +66,7 @@ shards:
 
   neuroplastic:
     git: https://github.com/spider-gazelle/neuroplastic.git
-    version: 1.6.1
+    version: 1.6.2
 
   openssl_ext:
     git: https://github.com/stakach/openssl_ext.git
@@ -78,7 +78,7 @@ shards:
 
   placeos:
     git: https://github.com/placeos/crystal-client.git
-    version: 2.0.0+git.commit.0c0408acfb0fc5661a65bae7cf75a7bc1d79039f
+    version: 2.0.0+git.commit.0f4b5e074f22361764faa25404d1203750c8608e
 
   placeos-models:
     git: https://github.com/placeos/models.git
