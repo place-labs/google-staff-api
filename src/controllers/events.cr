@@ -63,8 +63,16 @@ class Events < Application
   class CreateCalEvent
     include JSON::Serializable
 
+    class System
+      include JSON::Serializable
+
+      property id : String
+    end
+
     # This is the resource calendar, it will be moved to one of the attendees
     property system_id : String?
+    property system : System?
+
     property title : String # summary
     property body : String? # description
     property location : String?
@@ -99,7 +107,7 @@ class Events < Application
     attendees = event.attendees.try(&.map { |a| a[:email] }) || [] of String
     placeos_client = get_placeos_client
 
-    system_id = event.system_id
+    system_id = event.system_id || event.system.try(&.id)
     if system_id
       system = placeos_client.systems.fetch(system_id)
       attendees << system.email.presence.not_nil!
