@@ -12,16 +12,34 @@ class Events < Application
     calendar = calendar_for(user)
 
     # Grab events in parallel
-    results = Promise.all(calendars.map { |calendar_id, system|
+    responses = Promise.all(calendars.map { |calendar_id, system|
       Promise.defer {
-        calendar.events(
+        events = calendar.events(
           calendar_id,
           period_start,
           period_end,
           showDeleted: include_cancelled
         ).items.map { |event| {calendar_id, system, event} }
+
+        # no error, the cal id and the list of the events
+        {"", calendar_id, events}
+      }.catch { |error|
+        {error.message || "", system.try(&.id) || calendar_id, [] of Tuple(String, PlaceOS::Client::API::Models::System?, Google::Calendar::Event)}
       }
-    }).get.flatten
+    }).get
+
+    # if there are any errors let's log them and expose them via the API
+    # done outside the promise so we have all the tagging associated with this fiber
+    calendar_errors = [] of String
+    responses.select { |result| result[0].presence }.each do |error|
+      calendar_id = error[1]
+      calendar_errors << calendar_id
+      Log.warn { "error fetching events for #{calendar_id}: #{error[0]}" }
+    end
+    response.headers["X-Calendar-Errors"] = calendar_errors unless calendar_errors.empty?
+
+    # return the valid results
+    results = responses.map { |result| result[2] }.flatten
 
     # Grab any existing eventmeta data
     metadatas = {} of String => EventMetadata

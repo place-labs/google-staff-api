@@ -22,7 +22,7 @@ module App
 
   # Not for production use
   # Map the custom certificates into the container
-  SSL_VERIFY_NONE = ENV["SSL_VERIFY_NONE"] || false
+  SSL_VERIFY_NONE = ENV["SSL_VERIFY_NONE"]? || false
 
   def self.running_in_production?
     PRODUCTION

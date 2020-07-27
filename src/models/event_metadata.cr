@@ -5,6 +5,9 @@ class EventMetadata < Granite::Base
   table metadata
 
   # Event details
+  # NOTE:: Using this as the ID is a bad idea
+  # should have a seperate indexed column for lookup so it's simple to migrate guests
+  # if a meeting is moved to a new room
   column id : String, primary: true, auto: false
 
   column system_id : String

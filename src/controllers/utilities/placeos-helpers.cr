@@ -66,6 +66,9 @@ module Utils::PlaceOSHelpers
             capacity: args.capacity,
             bookable: args.bookable
           )
+        }.catch { |error|
+          Log.warn { "error fetching zone id #{zone_id}: #{error.message || ""}" }
+          error
         }
       }).get.each do |results|
         results.each do |system|
@@ -84,7 +87,10 @@ module Utils::PlaceOSHelpers
 
       # perform requests in parallel (map-reduce)
       Promise.all(system_ids.map { |system_id|
-        Promise.defer { client.fetch(system_id) }
+        Promise.defer { client.fetch(system_id) }.catch { |error|
+          Log.warn { "error fetching system id #{system_id}: #{error.message || ""}" }
+          error
+        }
       }).get.each do |system|
         calendar = system.email
         next unless calendar
