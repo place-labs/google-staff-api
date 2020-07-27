@@ -24,7 +24,9 @@ class Events < Application
         # no error, the cal id and the list of the events
         {"", calendar_id, events}
       }.catch { |error|
-        {error.message || "", system.try(&.id) || calendar_id, [] of Tuple(String, PlaceOS::Client::API::Models::System?, Google::Calendar::Event)}
+        sys_name = system.try(&.name)
+        calendar_id = sys_name ? "#{sys_name} (#{calendar_id})" : calendar_id
+        {error.message || "", calendar_id, [] of Tuple(String, PlaceOS::Client::API::Models::System?, Google::Calendar::Event)}
       }
     }).get
 
