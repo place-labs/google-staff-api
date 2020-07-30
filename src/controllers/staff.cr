@@ -13,7 +13,7 @@ class Staff < Application
                     Array(PlaceOS::Client).new
                   end
 
-  protected def user_token
+  protected def resource_token
     client = @@dir_service[0]
     # TODO:: expires don't grab this every request, cache until almost expired
     client.users.resource_token.token
@@ -24,7 +24,7 @@ class Staff < Application
 
     # If we can't use the 2-legged auth to access the staff directory
     dir = if App::DIR_SERVICE_ACCT
-            google_directory(user_token)
+            google_directory(resource_token)
           else
             google_directory
           end
@@ -37,7 +37,7 @@ class Staff < Application
 
     # If we can't use the 2-legged auth to access the staff directory
     dir = if App::DIR_SERVICE_ACCT
-            google_directory(user_token)
+            google_directory(resource_token)
           else
             google_directory
           end
