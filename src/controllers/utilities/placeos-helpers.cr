@@ -4,7 +4,7 @@ require "set"
 
 module Utils::PlaceOSHelpers
   # Base URL of the PlaceOS instance we are interacting with
-  PLACE_URI = ENV["PLACE_URI"]
+  PLACE_URI = App::PLACE_URI
 
   # Get the list of local calendars this user has access to
   def get_user_calendars

@@ -20,6 +20,13 @@ module App
 
   PG_DATABASE_URL = ENV["PG_DATABASE_URL"]
 
+  PLACE_URI             = ENV["PLACE_URI"]
+  DIR_SERVICE_USER      = ENV["DIR_SERVICE_USER"]?.presence || ""
+  DIR_SERVICE_PASS      = ENV["DIR_SERVICE_PASS"]? || ""
+  DIR_SERVICE_CLIENT_ID = ENV["DIR_SERVICE_CLIENT_ID"]? || ""
+  DIR_SERVICE_SECRET    = ENV["DIR_SERVICE_SECRET"]? || ""
+  DIR_SERVICE_ACCT      = !DIR_SERVICE_USER.empty?
+
   # Not for production use
   # Map the custom certificates into the container
   SSL_VERIFY_NONE = ENV["SSL_VERIFY_NONE"]? || false

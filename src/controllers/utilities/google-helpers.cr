@@ -35,6 +35,10 @@ module Utils::GoogleHelpers
     Google::Directory.new(auth, DIRECTORY_DOMAIN)
   end
 
+  def google_directory(user_token : String)
+    Google::Directory.new(user_token, DIRECTORY_DOMAIN)
+  end
+
   # Callback to enforce JSON request body
   protected def ensure_json
     unless request.headers["Content-Type"]?.try(&.starts_with?("application/json"))

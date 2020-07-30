@@ -1,15 +1,50 @@
 class Staff < Application
   base "/api/staff/v1/people"
 
+  @@dir_service = if App::DIR_SERVICE_ACCT
+                    [PlaceOS::Client.new(
+                      App::PLACE_URI,
+                      App::DIR_SERVICE_USER,
+                      App::DIR_SERVICE_PASS,
+                      App::DIR_SERVICE_CLIENT_ID,
+                      App::DIR_SERVICE_SECRET,
+                    )]
+                  else
+                    Array(PlaceOS::Client).new
+                  end
+
+  protected def user_token
+    client = @@dir_service[0]
+    # TODO:: expires don't grab this every request, cache until almost expired
+    client.users.resource_token.token
+  end
+
   def index
     query = params["q"]?
-    dir = google_directory
+
+    # If we can't use the 2-legged auth to access the staff directory
+    dir = if App::DIR_SERVICE_ACCT
+            google_directory(user_token)
+          else
+            google_directory
+          end
+
     render json: dir.users(query).users.map { |u| build_user(u) }
   end
 
   def show
+    id = params["id"]
+
+    # If we can't use the 2-legged auth to access the staff directory
+    dir = if App::DIR_SERVICE_ACCT
+            google_directory(user_token)
+          else
+            google_directory
+          end
+
     # TODO:: return user location information
-    user_info = google_directory.lookup(params["id"])
+
+    user_info = dir.lookup(id)
     render json: build_user(user_info)
   end
 
