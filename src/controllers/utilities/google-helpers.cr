@@ -15,7 +15,7 @@ module Utils::GoogleHelpers
     auth = Google::Auth.new(
       issuer: ISSUER,
       signing_key: PRIVATE_KEY,
-      scopes: "https://www.googleapis.com/auth/calendar",
+      scopes: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/admin.directory.user.readonly",
       sub: sub,
       user_agent: "PlaceOS Staff API"
     )
@@ -27,7 +27,7 @@ module Utils::GoogleHelpers
     auth = Google::Auth.new(
       issuer: ISSUER,
       signing_key: PRIVATE_KEY,
-      scopes: "https://www.googleapis.com/auth/admin.directory.user.readonly",
+      scopes: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/admin.directory.user.readonly",
       sub: ADMIN_ACCOUNT,
       user_agent: "PlaceOS Staff API"
     )
