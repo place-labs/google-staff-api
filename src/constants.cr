@@ -26,6 +26,7 @@ module App
   DIR_SERVICE_CLIENT_ID = ENV["DIR_SERVICE_CLIENT_ID"]? || ""
   DIR_SERVICE_SECRET    = ENV["DIR_SERVICE_SECRET"]? || ""
   DIR_SERVICE_ACCT      = !DIR_SERVICE_USER.empty?
+  DIR_VIEW_TYPE         = ENV["DIR_VIEW_TYPE"]? || "admin_view"
 
   # Not for production use
   # Map the custom certificates into the container

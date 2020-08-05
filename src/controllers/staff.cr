@@ -24,7 +24,7 @@ class Staff < Application
 
     # If we can't use the 2-legged auth to access the staff directory
     dir = if App::DIR_SERVICE_ACCT
-            google_directory(resource_token)
+            google_directory(resource_token, App::DIR_VIEW_TYPE)
           else
             google_directory
           end
@@ -37,7 +37,7 @@ class Staff < Application
 
     # If we can't use the 2-legged auth to access the staff directory
     dir = if App::DIR_SERVICE_ACCT
-            google_directory(resource_token)
+            google_directory(resource_token, App::DIR_VIEW_TYPE)
           else
             google_directory
           end

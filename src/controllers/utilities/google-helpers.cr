@@ -35,8 +35,8 @@ module Utils::GoogleHelpers
     Google::Directory.new(auth, DIRECTORY_DOMAIN)
   end
 
-  def google_directory(user_token : String)
-    Google::Directory.new(user_token, DIRECTORY_DOMAIN)
+  def google_directory(user_token : String, view_type = "admin_view")
+    Google::Directory.new(user_token, DIRECTORY_DOMAIN, view_type: view_type)
   end
 
   # Callback to enforce JSON request body
