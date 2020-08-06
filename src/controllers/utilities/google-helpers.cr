@@ -10,7 +10,7 @@ module Utils::GoogleHelpers
   ISSUER           = ENV["GOOGLE_ISSUER"]? || "placeos@organisation.iam.gserviceaccount.com"
   ADMIN_ACCOUNT    = ENV["GOOGLE_ADMIN_ACCOUNT"]? || "placeos_service_account@admin.org.com"
   DIRECTORY_DOMAIN = ENV["GOOGLE_DIRECTORY_DOMAIN"]? || "example.com"
-  GOOGLE_SCOPES   = ENV["GOOGLE_SCOPES"]? || "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/admin.directory.user.readonly"
+  GOOGLE_SCOPES    = ENV["GOOGLE_SCOPES"]? || "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/admin.directory.user.readonly"
 
   def calendar_for(sub = ADMIN_ACCOUNT)
     auth = Google::Auth.new(
