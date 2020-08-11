@@ -524,6 +524,19 @@ class Events < Application
       attendee.checked_in = checkin
       attendee.save!
 
+      eventmeta = attendee.event
+
+      # Update PlaceOS with an signal "staff/guest/checkin"
+      spawn do
+        get_placeos_client.root.signal("staff/guest/checkin", {
+          action:    :checkin,
+          system_id: system_id,
+          event_id:  event_id,
+          host:      eventmeta.host_email,
+          resource:  eventmeta.resource_calendar,
+        })
+      end
+
       render json: attending_guest(attendee, attendee.guest)
     else
       # possibly this vistor was not expected? We can check if they are in the event
