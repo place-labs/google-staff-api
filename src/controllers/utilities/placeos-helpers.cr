@@ -31,12 +31,12 @@ module Utils::PlaceOSHelpers
   end
 
   class CalendarSelection < Params
-    attribute calendars : String
-    attribute zone_ids : String
-    attribute system_ids : String
-    attribute features : String
-    attribute capacity : Int32
-    attribute bookable : Bool
+    attribute calendars : String?
+    attribute zone_ids : String?
+    attribute system_ids : String?
+    attribute features : String?
+    attribute capacity : Int32?
+    attribute bookable : Bool?
   end
 
   def matching_calendar_ids
@@ -100,5 +100,53 @@ module Utils::PlaceOSHelpers
     end
 
     system_calendars
+  end
+
+  enum Access
+    None
+    Manage
+    Admin
+  end
+
+  class PermissionsMeta
+    include JSON::Serializable
+
+    getter none : Array(String)?
+    getter manage : Array(String)?
+    getter admin : Array(String)?
+
+    # Returns {permission_found, access_level}
+    def has_access?(groups : Array(String)) : Tuple(Bool, Access)
+      access = false
+
+      if deny = none
+        return {true, Access::None} unless (deny & groups).empty?
+      end
+
+      if can_manage = manage
+        return {true, Access::Manage} unless (can_manage & groups).empty?
+      end
+
+      if can_admin = admin
+        return {true, Access::Admin} unless (can_admin & groups).empty?
+      end
+
+      {false, Access::None}
+    end
+  end
+
+  # https://docs.google.com/document/d/1OaZljpjLVueFitmFWx8xy8BT8rA2lITyPsIvSYyNNW8/edit#
+  # See the section on user-permissions
+  def check_access(groups : Array(String), system)
+    client = get_placeos_client.metadata
+    check = [system.id] + system.zones
+    access = Access::None
+    check.each do |area_id|
+      if metadata = client.fetch(area_id, "permissions")["permissions"]?.try(&.metadata)
+        continue, access = PermissionsMeta.from_json(metadata[""]?).has_access?(groups)
+        break unless continue
+      end
+    end
+    access
   end
 end

@@ -257,9 +257,12 @@ class Events < Application
     user = user_token.user.email
     host = event.organizer.try &.email || user
 
-    # TODO:: check permisions as may be able to edit on behalf of the user
+    # check permisions
     existing_attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
-    head(:forbidden) unless user == host || user.in?(existing_attendees)
+    unless user == host || user.in?(existing_attendees)
+      # may be able to edit on behalf of the user
+      head(:forbidden) if check_access(user_token.user.groups).none?
+    end
     calendar = calendar_for(host)
 
     # Check if attendees need updating
@@ -314,8 +317,8 @@ class Events < Application
 
     updated_event = calendar.update(
       event.id,
-      event_start: Time.unix(event_start).to_local_in(zone),
-      event_end: Time.unix(event_end).to_local_in(zone),
+      event_start: Time.unix(event_start).in(zone),
+      event_end: Time.unix(event_end).in(zone),
       calendar_id: host,
       attendees: update_attendees ? attendees : nil,
       all_day: all_day,
