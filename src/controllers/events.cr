@@ -517,7 +517,6 @@ class Events < Application
     render :bad_request, json: {error: "missing system_id param"} unless system_id
 
     metadata_id = "#{system_id}-#{event_id}"
-
     attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }
     if attendees.size > 0
       attendee = attendees.first
@@ -525,15 +524,23 @@ class Events < Application
       attendee.save!
 
       eventmeta = attendee.event
+      guest_details = attendee.guest
+
+      # Check the event is still on
+      event = get_event(event_id, eventmeta.resource_calendar)
+      head(:not_found) unless event && event.status != "cancelled"
 
       # Update PlaceOS with an signal "staff/guest/checkin"
       spawn do
         get_placeos_client.root.signal("staff/guest/checkin", {
-          action:    :checkin,
-          system_id: system_id,
-          event_id:  event_id,
-          host:      eventmeta.host_email,
-          resource:  eventmeta.resource_calendar,
+          action:         :checkin,
+          system_id:      system_id,
+          event_id:       event_id,
+          host:           eventmeta.host_email,
+          resource:       eventmeta.resource_calendar,
+          event_summary:  event.not_nil!.summary,
+          attendee_name:  guest_details.name,
+          attendee_email: attendee.email,
         })
       end
 
