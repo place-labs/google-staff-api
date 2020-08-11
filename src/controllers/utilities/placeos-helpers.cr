@@ -142,8 +142,8 @@ module Utils::PlaceOSHelpers
     check = [system.id] + system.zones
     access = Access::None
     check.each do |area_id|
-      if metadata = client.fetch(area_id, "permissions")["permissions"]?.try(&.metadata)
-        continue, access = PermissionsMeta.from_json(metadata[""]?).has_access?(groups)
+      if metadata = client.fetch(area_id, "permissions")["permissions"]?.try(&.details)
+        continue, access = PermissionsMeta.from_json(metadata.to_json).has_access?(groups)
         break unless continue
       end
     end

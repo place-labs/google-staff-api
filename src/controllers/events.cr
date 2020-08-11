@@ -261,7 +261,7 @@ class Events < Application
     existing_attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
     unless user == host || user.in?(existing_attendees)
       # may be able to edit on behalf of the user
-      head(:forbidden) if check_access(user_token.user.groups).none?
+      head(:forbidden) unless system && !check_access(user_token.user.roles, system).none?
     end
     calendar = calendar_for(host)
 
