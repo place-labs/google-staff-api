@@ -539,6 +539,7 @@ class Events < Application
           host:           eventmeta.host_email,
           resource:       eventmeta.resource_calendar,
           event_summary:  event.not_nil!.summary,
+          event_starting: eventmeta.event_start,
           attendee_name:  guest_details.name,
           attendee_email: attendee.email,
         })
