@@ -186,6 +186,22 @@ class Events < Application
             attend.guest_id = email
             attend.visit_expected = true
             attend.save!
+
+            spawn do
+              guest = attend.guest
+
+              placeos_client.root.signal("staff/guest/attending", {
+                action:         :meeting_created,
+                system_id:      sys.id,
+                event_id:       gevent.id,
+                host:           host,
+                resource:       sys.email,
+                event_summary:  gevent.summary,
+                event_starting: event_start.to_unix,
+                attendee_name:  guest.name,
+                attendee_email: guest.email,
+              })
+            end
           end
         end
 
@@ -362,10 +378,16 @@ class Events < Application
 
       # Grab the list of externals that might be attending
       if update_attendees
+        existing_lookup = {} of String => Attendee
+        existing = meta.attendees.to_a
+        existing.each { |a| existing_lookup[a.email] = a } unless changing_room
+
         if !remove_attendees.empty?
-          existing = meta.attendees.to_a
           remove_attendees.each do |email|
-            existing.select { |attend| attend.email == email }.each(&.destroy)
+            existing.select { |attend| attend.email == email }.each do |attend|
+              existing_lookup.delete(attend.email)
+              attend.destroy
+            end
           end
         end
 
@@ -387,11 +409,33 @@ class Events < Application
           # Create attendees
           attending.each do |attendee|
             email = attendee[:email].strip.downcase
-            attend = Attendee.new
+
+            attend = existing_lookup[email]? || Attendee.new
+            previously_visiting = attend.visit_expected
+
             attend.event_id = meta.id.not_nil!
             attend.guest_id = email
             attend.visit_expected = true
             attend.save!
+
+            if !previously_visiting
+              spawn do
+                sys = system.not_nil!
+                guest = attend.guest
+
+                placeos_client.root.signal("staff/guest/attending", {
+                  action:         :meeting_update,
+                  system_id:      sys.id,
+                  event_id:       event_id,
+                  host:           host,
+                  resource:       sys.email,
+                  event_summary:  updated_event.summary,
+                  event_starting: event_start,
+                  attendee_name:  guest.name,
+                  attendee_email: guest.email,
+                })
+              end
+            end
           end
         end
       end
