@@ -66,6 +66,7 @@ class Bookings < Application
           user_id:      booking.user_id,
           user_email:   booking.user_email,
           user_name:    booking.user_name,
+          zones:        booking.zones,
         })
       end
 
@@ -154,6 +155,7 @@ class Bookings < Application
         user_id:      booking.user_id,
         user_email:   booking.user_email,
         user_name:    booking.user_name,
+        zones:        booking.zones,
       })
     end
 
@@ -192,6 +194,7 @@ class Bookings < Application
           user_id:      booking.user_id,
           user_email:   booking.user_email,
           user_name:    booking.user_name,
+          zones:        booking.zones,
         })
       end
 
