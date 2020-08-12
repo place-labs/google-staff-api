@@ -36,7 +36,19 @@ class Bookings < Application
   def create
     booking = Booking.from_json(request.body.as(IO))
 
-    # TODO:: check there isn't a clashing booking
+    # check there isn't a clashing booking
+    starting = booking.booking_start
+    ending = booking.booking_end
+    booking_type = booking.booking_type
+    asset_id = booking.asset_id
+
+    existing = [] of Booking
+    Booking.all(
+      "WHERE booking_start <= ? AND booking_end >= ? AND booking_type = ? AND asset_id = ?",
+      [ending, starting, booking_type, asset_id]
+    ).each { |b| existing << b }
+
+    head(:conflict) unless existing.empty?
 
     # Add the user details
     user = user_token.user
@@ -50,7 +62,10 @@ class Bookings < Application
           action:       :create,
           id:           booking.id,
           booking_type: booking.booking_type,
-          resource:     booking.asset_id,
+          resource_id:  booking.asset_id,
+          user_id:      booking.user_id,
+          user_email:   booking.user_email,
+          user_name:    booking.user_name,
         })
       end
 
@@ -82,7 +97,22 @@ class Bookings < Application
     booking.rejected = false
     booking.approved = false
 
-    # TODO:: check there isn't a clashing booking
+    # check there isn't a clashing booking
+    starting = booking.booking_start
+    ending = booking.booking_end
+    booking_type = booking.booking_type
+    asset_id = booking.booking_type
+
+    existing = [] of Booking
+    Booking.all(
+      "WHERE booking_start <= ? AND booking_end >= ? AND booking_type = ? AND asset_id = ?",
+      [ending, starting, booking_type, asset_id]
+    ).each { |b| existing << b }
+
+    # Don't clash with self
+    existing = existing.reject { |b| b.id == booking.id }
+
+    head(:conflict) unless existing.empty?
 
     update_booking(booking)
   end
@@ -120,7 +150,10 @@ class Bookings < Application
         action:       :cancelled,
         id:           booking.id,
         booking_type: booking.booking_type,
-        resource:     booking.asset_id,
+        resource_id:  booking.asset_id,
+        user_id:      booking.user_id,
+        user_email:   booking.user_email,
+        user_name:    booking.user_name,
       })
     end
 
@@ -151,11 +184,14 @@ class Bookings < Application
   def update_booking(booking, signal = "changed")
     if booking.save
       spawn do
-        get_placeos_client.root.signal("staff/booking/#{signal}", {
-          action:       :update,
+        get_placeos_client.root.signal("staff/booking/changed", {
+          action:       signal,
           id:           booking.id,
           booking_type: booking.booking_type,
-          resource:     booking.asset_id,
+          resource_id:  booking.asset_id,
+          user_id:      booking.user_id,
+          user_email:   booking.user_email,
+          user_name:    booking.user_name,
         })
       end
 

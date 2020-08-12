@@ -117,8 +117,6 @@ module Utils::PlaceOSHelpers
 
     # Returns {permission_found, access_level}
     def has_access?(groups : Array(String)) : Tuple(Bool, Access)
-      access = false
-
       if deny = none
         return {true, Access::None} unless (deny & groups).empty?
       end
