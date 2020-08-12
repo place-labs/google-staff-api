@@ -59,14 +59,16 @@ class Bookings < Application
     if booking.save
       spawn do
         get_placeos_client.root.signal("staff/booking/changed", {
-          action:       :create,
-          id:           booking.id,
-          booking_type: booking.booking_type,
-          resource_id:  booking.asset_id,
-          user_id:      booking.user_id,
-          user_email:   booking.user_email,
-          user_name:    booking.user_name,
-          zones:        booking.zones,
+          action:        :create,
+          id:            booking.id,
+          booking_type:  booking.booking_type,
+          booking_start: booking.booking_start,
+          booking_end:   booking.booking_end,
+          resource_id:   booking.asset_id,
+          user_id:       booking.user_id,
+          user_email:    booking.user_email,
+          user_name:     booking.user_name,
+          zones:         booking.zones,
         })
       end
 
@@ -148,14 +150,16 @@ class Bookings < Application
 
     spawn do
       get_placeos_client.root.signal("staff/booking/changed", {
-        action:       :cancelled,
-        id:           booking.id,
-        booking_type: booking.booking_type,
-        resource_id:  booking.asset_id,
-        user_id:      booking.user_id,
-        user_email:   booking.user_email,
-        user_name:    booking.user_name,
-        zones:        booking.zones,
+        action:        :cancelled,
+        id:            booking.id,
+        booking_type:  booking.booking_type,
+        booking_start: booking.booking_start,
+        booking_end:   booking.booking_end,
+        resource_id:   booking.asset_id,
+        user_id:       booking.user_id,
+        user_email:    booking.user_email,
+        user_name:     booking.user_name,
+        zones:         booking.zones,
       })
     end
 
@@ -187,14 +191,16 @@ class Bookings < Application
     if booking.save
       spawn do
         get_placeos_client.root.signal("staff/booking/changed", {
-          action:       signal,
-          id:           booking.id,
-          booking_type: booking.booking_type,
-          resource_id:  booking.asset_id,
-          user_id:      booking.user_id,
-          user_email:   booking.user_email,
-          user_name:    booking.user_name,
-          zones:        booking.zones,
+          action:        signal,
+          id:            booking.id,
+          booking_type:  booking.booking_type,
+          booking_start: booking.booking_start,
+          booking_end:   booking.booking_end,
+          resource_id:   booking.asset_id,
+          user_id:       booking.user_id,
+          user_email:    booking.user_email,
+          user_name:     booking.user_name,
+          zones:         booking.zones,
         })
       end
 
