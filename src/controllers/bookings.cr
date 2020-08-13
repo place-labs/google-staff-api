@@ -132,7 +132,7 @@ class Bookings < Application
   post "/:id/reject", :reject do
     booking = current_booking
     set_approver(booking, false)
-    update_booking(booking, "approved")
+    update_booking(booking, "rejected")
   end
 
   post "/:id/check_in", :check_in do
