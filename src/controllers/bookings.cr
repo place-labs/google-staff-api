@@ -3,7 +3,7 @@ class Bookings < Application
 
   before_action :find_booking, only: [:show, :update, :update_alt, :destroy, :check_in, :approve, :reject]
   before_action :check_access, only: [:update, :update_alt, :destroy, :check_in]
-  getter booking : Booking?
+  getter(booking : Booking?) { find_booking }
 
   def index
     starting = query_params["period_start"].to_i64
@@ -80,7 +80,6 @@ class Bookings < Application
   end
 
   def update
-    booking = current_booking
     changes = Booking.from_json(request.body.as(IO))
 
     {% for key in [:asset_id, :zones, :booking_start, :booking_end, :title, :description, :checked_in] %}
@@ -124,29 +123,25 @@ class Bookings < Application
   put "/:id", :update_alt { update }
 
   post "/:id/approve", :approve do
-    booking = current_booking
     set_approver(booking, true)
     update_booking(booking, "approved")
   end
 
   post "/:id/reject", :reject do
-    booking = current_booking
     set_approver(booking, false)
     update_booking(booking, "rejected")
   end
 
   post "/:id/check_in", :check_in do
-    booking = current_booking
     booking.checked_in = params["state"]? != "false"
     update_booking(booking, "checked_in")
   end
 
   def show
-    render json: current_booking
+    render json: booking
   end
 
   def destroy
-    booking = current_booking
     booking.destroy
 
     spawn do
@@ -172,19 +167,14 @@ class Bookings < Application
   #              Helper Methods
   # ============================================
 
-  def current_booking : Booking
-    @booking || find_booking
-  end
-
   def find_booking
-    id = route_params["id"]
     # Find will raise a 404 (not found) if there is an error
-    @booking = Booking.find!(id)
+    Booking.find!(route_params["id"])
   end
 
   def check_access
     user = user_token
-    if current_booking.user_id != user.id
+    if booking.user_id != user.id
       head :forbidden unless user.is_admin? || user.is_support?
     end
   end

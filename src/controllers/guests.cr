@@ -119,6 +119,7 @@ class Guests < Application
   # ============================================
   
   def find_guest
+    # Find will raise a 404 (not found) if there is an error
     Guest.find!(route_params["id"])
   end
 end
