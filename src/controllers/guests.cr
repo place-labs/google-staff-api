@@ -2,7 +2,7 @@ class Guests < Application
   base "/api/staff/v1/guests"
 
   before_action :find_guest, only: [:show, :update, :update_alt, :destroy, :meetings]
-  getter(guest : Guest?) { find_guest }
+  getter guest : Guest { find_guest }
 
   def index
     query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
