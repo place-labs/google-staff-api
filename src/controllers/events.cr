@@ -135,7 +135,7 @@ class Events < Application
       location: event.location,
       summary: event.title,
       description: event.body,
-      recurrence: event.recurrence ? CalendarEvent::Recurrence.recurrence_to_google(event.recurrence.not_nil!) : nil
+      recurrence: event.recurrence ? CalendarEvent::Recurrence.recurrence_to_google(event_start, event.recurrence.not_nil!) : nil
     )
 
     # Update PlaceOS with an signal "/staff/event/changed"

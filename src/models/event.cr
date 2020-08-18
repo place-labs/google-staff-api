@@ -62,10 +62,10 @@ class CalendarEvent
     property interval : Int32?
     property pattern : String
 
-    def self.recurrence_to_google(recurrence)
+    def self.recurrence_to_google(event_start, recurrence)
       interval = recurrence.interval || 1
       pattern = recurrence.pattern
-      days_of_week = recurrence.days_of_week
+      days_of_week = recurrence.days_of_week || event_start.day_of_week.to_s.downcase
 
       formatted_until_date = recurrence.range_end.to_rfc3339.gsub("-", "").gsub(":", "").split(".").first
       until_date = "#{formatted_until_date}"
