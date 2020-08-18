@@ -94,6 +94,8 @@ class Events < Application
       resource: Bool?,
     ))?
 
+    property recurrence : CalendarEvent::Recurrence?
+
     property extension_data : JSON::Any?
   end
 
@@ -132,7 +134,8 @@ class Events < Application
       visibility: event.private ? Google::Visibility::Private : Google::Visibility::Default,
       location: event.location,
       summary: event.title,
-      description: event.body
+      description: event.body,
+      recurrence: event.recurrence ? CalendarEvent::Recurrence.recurrence_to_google(event.recurrence.not_nil!) : nil
     )
 
     # Update PlaceOS with an signal "/staff/event/changed"
