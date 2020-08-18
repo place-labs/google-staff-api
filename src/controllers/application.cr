@@ -119,7 +119,13 @@ abstract class Application < ActionController::Base
       metadata.save
     end
 
-    # TODO:: recurring events
+    # recurring events
+    recurring = false
+    recurrence = if recur = event.recurrence
+                   recurring = true
+                   CalendarEvent::Recurrence.recurrence_from_google(recur, event)
+                 end
+
     # TODO:: location
 
     {
@@ -139,6 +145,8 @@ abstract class Application < ActionController::Base
       attendees:      attendees,
       system:         system,
       extension_data: metadata.try(&.extension_data) || {} of Nil => Nil,
+      recurring:      recurring,
+      recurrence:     recurrence,
     }
   end
 

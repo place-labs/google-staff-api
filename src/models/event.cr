@@ -62,6 +62,10 @@ class CalendarEvent
     property interval : Int32?
     property pattern : String
 
+    def initialize(@range_start, @range_end, @interval, pattern, @days_of_week = nil)
+      @pattern = pattern == "relativemonthly" ? "monthly" : pattern
+    end
+
     def self.recurrence_to_google(event_start, recurrence)
       interval = recurrence.interval || 1
       pattern = recurrence.pattern
@@ -82,7 +86,7 @@ class CalendarEvent
     def self.recurrence_from_google(recurrence_rule, event)
       rule_parts = recurrence_rule.not_nil!.first.split(";")
       location = event.start.time_zone ? Time::Location.load(event.start.time_zone.not_nil!) : Time::Location.load("UTC")
-      PlaceCalendar::Recurrence.new(range_start: event.start.time.at_beginning_of_day.in(location),
+      CalendarEvent::Recurrence.new(range_start: event.start.time.at_beginning_of_day.in(location),
         range_end: google_range_end(rule_parts, event),
         interval: google_interval(rule_parts),
         pattern: google_pattern(rule_parts),
