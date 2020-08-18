@@ -3,7 +3,7 @@ class Bookings < Application
 
   before_action :find_booking, only: [:show, :update, :update_alt, :destroy, :check_in, :approve, :reject]
   before_action :check_access, only: [:update, :update_alt, :destroy, :check_in]
-  getter(booking : Booking?) { find_booking }
+  getter booking : Booking { find_booking }
 
   def index
     starting = query_params["period_start"].to_i64
