@@ -115,7 +115,18 @@ class Events < Application
       attendees << system.email.presence.not_nil!
     end
 
-    attendees.uniq!
+    # Ensure the host is configured to be attending the meeting and has accepted the meeting
+    attendees = attendees.uniq.reject { |email| email == host }.map do |email|
+      # hash = Hash(Symbol, String | Bool).new
+      # hash[:email] = email
+      # hash
+      {:email => email}
+    end
+
+    attendees << {
+      :email          => host,
+      :responseStatus => "accepted",
+    }
 
     zone = if tz = event.timezone
              Time::Location.load(tz)
