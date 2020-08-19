@@ -2,7 +2,7 @@ class Guests < Application
   base "/api/staff/v1/guests"
 
   before_action :find_guest, only: [:show, :update, :update_alt, :destroy, :meetings]
-  getter guest : Guest?
+  getter guest : Guest { find_guest }
 
   def index
     query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
@@ -48,13 +48,11 @@ class Guests < Application
 
   def show
     # find out if they are attending today
-    guest = current_guest
     attendee = guest.attending_today?(get_timezone)
     render json: attending_guest(attendee, guest)
   end
 
   def update
-    guest = current_guest
     changes = Guest.from_json(request.body.as(IO))
     {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous] %}
       begin
@@ -90,7 +88,7 @@ class Guests < Application
   end
 
   def destroy
-    current_guest.destroy
+    guest.destroy
     head :accepted
   end
 
@@ -101,7 +99,7 @@ class Guests < Application
     placeos_client = get_placeos_client.systems
     calendar = calendar_for(user_token.user.email)
 
-    events = Promise.all(current_guest.events(future_only, limit).map { |metadata|
+    events = Promise.all(guest.events(future_only, limit).map { |metadata|
       Promise.defer {
         cal_id = metadata.resource_calendar.not_nil!
         system = placeos_client.fetch(metadata.system_id.not_nil!)
@@ -119,14 +117,9 @@ class Guests < Application
   # ============================================
   #              Helper Methods
   # ============================================
-
-  def current_guest : Guest
-    @guest || find_guest
-  end
-
+  
   def find_guest
-    id = route_params["id"]
     # Find will raise a 404 (not found) if there is an error
-    @guest = Guest.find!(id)
+    Guest.find!(route_params["id"])
   end
 end
