@@ -111,14 +111,14 @@ module Utils::PlaceOSHelpers
   class PermissionsMeta
     include JSON::Serializable
 
-    getter none : Array(String)?
+    getter deny : Array(String)?
     getter manage : Array(String)?
     getter admin : Array(String)?
 
     # Returns {permission_found, access_level}
     def has_access?(groups : Array(String)) : Tuple(Bool, Access)
-      if deny = none
-        return {true, Access::None} unless (deny & groups).empty?
+      if none = deny
+        return {true, Access::None} unless (none & groups).empty?
       end
 
       if can_manage = manage
