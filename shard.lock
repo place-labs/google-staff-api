@@ -42,7 +42,7 @@ shards:
 
   google:
     git: https://github.com/PlaceOS/google.git
-    version: 2.4.2
+    version: 2.5.2
 
   granite:
     git: https://github.com/amberframework/granite.git
@@ -70,7 +70,7 @@ shards:
 
   neuroplastic:
     git: https://github.com/spider-gazelle/neuroplastic.git
-    version: 1.6.3
+    version: 1.6.4
 
   openssl_ext:
     git: https://github.com/stakach/openssl_ext.git
@@ -82,11 +82,11 @@ shards:
 
   placeos:
     git: https://github.com/placeos/crystal-client.git
-    version: 2.1.3+git.commit.b6bb8de3711e4d420fd27d55a02e7f266cb1c0ee
+    version: 2.1.4+git.commit.ff5f601047b52b2c252ce7ba979e78ccda86fd00
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 4.2.2
+    version: 4.2.3
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
@@ -98,7 +98,7 @@ shards:
 
   rethinkdb-orm:
     git: https://github.com/spider-gazelle/rethinkdb-orm.git
-    version: 3.0.0
+    version: 3.0.2
 
   retriable:
     git: https://github.com/sija/retriable.cr.git
