@@ -29,14 +29,14 @@ class Guest < Granite::Base
   column searchable : String
   column ext_data : String?
 
-  property extension_data : JSON::Any?
+  property extension_data : Hash(String, JSON::Any)?
 
-  def extension_data : JSON::Any
+  def extension_data : Hash(String, JSON::Any)
     if json_data = @extension_data
       json_data
     else
       data = self.ext_data
-      @extension_data = data ? JSON.parse(data) : JSON.parse("{}")
+      @extension_data = data ? JSON.parse(data).as_h : Hash(String, JSON::Any).new
     end
   end
 

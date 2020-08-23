@@ -62,8 +62,8 @@ class Guests < Application
     {% end %}
 
     # merge changes into extension data
-    data = guest.extension_data.as_h
-    changes.extension_data.as_h.each { |key, value| data[key] = value }
+    data = guest.extension_data
+    changes.extension_data.each { |key, value| data[key] = value }
     guest.extension_data = nil
     guest.ext_data = data.to_json
 

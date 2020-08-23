@@ -60,6 +60,21 @@ class Events < Application
     }
   end
 
+  class GuestDetails
+    include JSON::Serializable
+
+    property email : String
+    property name : String?
+    property preferred_name : String?
+    property phone : String?
+    property organisation : String?
+    property photo : String?
+    property extension_data : Hash(String, JSON::Any)?
+
+    property visit_expected : Bool?
+    property resource : Bool?
+  end
+
   class CreateCalEvent
     include JSON::Serializable
 
@@ -87,12 +102,7 @@ class Events < Application
     property event_end : Int64
     property timezone : String?
 
-    property attendees : Array(NamedTuple(
-      name: String?,
-      email: String,
-      visit_expected: Bool?,
-      resource: Bool?,
-    ))?
+    property attendees : Array(GuestDetails)?
 
     property recurrence : CalendarEvent::Recurrence?
 
@@ -106,7 +116,7 @@ class Events < Application
     host = event.host || user
     calendar = calendar_for(user)
 
-    attendees = event.attendees.try(&.map { |a| a[:email] }) || [] of String
+    attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
     placeos_client = get_placeos_client
 
     system_id = event.system_id || event.system.try(&.id)
@@ -154,7 +164,7 @@ class Events < Application
       sys = system.not_nil!
       # Grab the list of externals that might be attending
       attending = event.attendees.try(&.select { |attendee|
-        attendee[:visit_expected]
+        attendee.visit_expected
       })
 
       spawn do
@@ -185,16 +195,26 @@ class Events < Application
         if attending
           # Create guests
           attending.each do |attendee|
-            email = attendee[:email].strip.downcase
+            email = attendee.email.strip.downcase
             guest = Guest.find(email) || Guest.new
             guest.email = email
-            guest.name ||= attendee[:name]
+            guest.name ||= attendee.name
+            guest.preferred_name ||= attendee.preferred_name
+            guest.phone ||= attendee.phone
+            guest.organisation ||= attendee.organisation
+            guest.photo ||= attendee.photo
+
+            if ext_data = attendee.extension_data
+              guest_data = guest.extension_data
+              ext_data.each { |key, value| guest_data[key] = value }
+            end
+
             guest.save!
           end
 
           # Create attendees
           attending.each do |attendee|
-            email = attendee[:email].strip.downcase
+            email = attendee.email.strip.downcase
             attend = Attendee.new
             attend.event_id = meta.id.not_nil!
             attend.guest_id = email
@@ -251,12 +271,7 @@ class Events < Application
     property event_end : Int64?
     property timezone : String?
 
-    property attendees : Array(NamedTuple(
-      name: String?,
-      email: String,
-      visit_expected: Bool?,
-      resource: Bool?,
-    ))?
+    property attendees : Array(GuestDetails)?
 
     property extension_data : JSON::Any?
   end
@@ -297,7 +312,7 @@ class Events < Application
 
     # Check if attendees need updating
     update_attendees = !changes.attendees.nil?
-    attendees = changes.attendees.try(&.map { |a| a[:email] }) || existing_attendees
+    attendees = changes.attendees.try(&.map { |a| a.email }) || existing_attendees
     attendees << cal_id
     attendees.uniq!
 
@@ -407,22 +422,32 @@ class Events < Application
 
         attending = changes.try &.attendees.try(&.reject { |attendee|
           # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
-          attendee[:visit_expected].nil?
+          attendee.visit_expected.nil?
         })
 
         if attending
           # Create guests
           attending.each do |attendee|
-            email = attendee[:email].strip.downcase
+            email = attendee.email.strip.downcase
             guest = Guest.find(email) || Guest.new
             guest.email = email
-            guest.name ||= attendee[:name]
+            guest.name ||= attendee.name
+            guest.preferred_name ||= attendee.preferred_name
+            guest.phone ||= attendee.phone
+            guest.organisation ||= attendee.organisation
+            guest.photo ||= attendee.photo
+
+            if ext_data = attendee.extension_data
+              guest_data = guest.extension_data
+              ext_data.each { |key, value| guest_data[key] = value }
+            end
+
             guest.save!
           end
 
           # Create attendees
           attending.each do |attendee|
-            email = attendee[:email].strip.downcase
+            email = attendee.email.strip.downcase
 
             attend = existing_lookup[email]? || Attendee.new
             previously_visiting = attend.visit_expected
