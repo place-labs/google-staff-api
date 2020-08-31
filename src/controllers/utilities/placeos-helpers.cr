@@ -4,7 +4,8 @@ require "set"
 
 module Utils::PlaceOSHelpers
   # Base URL of the PlaceOS instance we are interacting with
-  PLACE_URI = App::PLACE_URI
+  PLACE_URI         = App::PLACE_URI
+  CALENDAR_WRITABLE = {"writer", "owner"}
 
   # Get the list of local calendars this user has access to
   def get_user_calendars
@@ -17,6 +18,10 @@ module Utils::PlaceOSHelpers
         id:      item.id,
         summary: item.summary,
         primary: !!item.primary,
+
+        # https://developers.google.com/calendar/v3/reference/calendarList#accessRole
+        # https://docs.microsoft.com/en-us/graph/api/user-list-calendars?view=graph-rest-1.0&tabs=http#response-1
+        can_edit: item.access_role.in?(CALENDAR_WRITABLE),
       }
     end
   end
