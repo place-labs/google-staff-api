@@ -1,6 +1,9 @@
 class Events < Application
   base "/api/staff/v1/events"
 
+  # Skip scope check for a single route
+  skip_action :check_jwt_scope, only: [:show, :guest_checkin]
+
   def index
     period_start = Time.unix(query_params["period_start"].to_i64)
     period_end = Time.unix(query_params["period_end"].to_i64)
@@ -499,6 +502,31 @@ class Events < Application
 
   def show
     event_id = route_params["id"]
+
+    # Guest access
+    if user_token.scope.includes?("guest")
+      guest_event_id, system_id = user_token.user.roles
+      guest_email = user_token.user.email.downcase
+
+      head :forbidden unless event_id == guest_event_id
+
+      metadata_id = "#{system_id}-#{event_id}"
+      attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }
+
+      if attendees.size > 0
+        attendee = attendees.first
+        eventmeta = attendee.event
+
+        event = get_event(event_id, eventmeta.resource_calendar)
+        head(:not_found) unless event
+
+        system = get_placeos_client.systems.fetch(system_id)
+        render json: standard_event(eventmeta.resource_calendar, system, event, eventmeta)
+      else
+        head :not_found
+      end
+    end
+
     if user_cal = query_params["calendar"]?
       # Need to confirm the user can access this calendar
       found = get_user_calendars.reject { |cal| cal[:id] != user_cal }.first?
@@ -592,12 +620,20 @@ class Events < Application
   end
 
   post("/:id/guests/:guest_id/checkin", :guest_checkin) do
-    event_id = route_params["id"]
-    guest_email = route_params["guest_id"].downcase
     checkin = (query_params["state"]? || "true") == "true"
 
-    system_id = query_params["system_id"]?
-    render :bad_request, json: {error: "missing system_id param"} unless system_id
+    event_id = route_params["id"]
+    guest_email = route_params["guest_id"].downcase
+
+    if user_token.scope.includes?("guest")
+      guest_event_id, system_id = user_token.user.roles
+      guest_token_email = user_token.user.email.downcase
+
+      head :forbidden unless event_id == guest_event_id && guest_email == guest_token_email
+    else
+      system_id = query_params["system_id"]?
+      render :bad_request, json: {error: "missing system_id param"} unless system_id
+    end
 
     metadata_id = "#{system_id}-#{event_id}"
     attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }

@@ -4,6 +4,9 @@ class Guests < Application
   before_action :find_guest, only: [:show, :update, :update_alt, :destroy, :meetings]
   getter guest : Guest { find_guest }
 
+  # Skip scope check for relevant routes
+  skip_action :check_jwt_scope, only: [:show, :update]
+
   def index
     query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
     period_start = query_params["period_start"]?
@@ -47,12 +50,20 @@ class Guests < Application
   end
 
   def show
+    if user_token.scope.includes?("guest")
+      head :forbidden unless guest.id == user_token.sub
+    end
+
     # find out if they are attending today
     attendee = guest.attending_today?(get_timezone)
     render json: attending_guest(attendee, guest)
   end
 
   def update
+    if user_token.scope.includes?("guest")
+      head :forbidden unless guest.id == user_token.sub
+    end
+
     changes = Guest.from_json(request.body.as(IO))
     {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous] %}
       begin

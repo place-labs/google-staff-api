@@ -1,5 +1,8 @@
 require "uri"
-require "../../models/user_jwt"
+require "placeos-models"
+
+alias JWTBase = PlaceOS::Model::JWTBase
+alias UserJWT = PlaceOS::Model::UserJWT
 
 # Helper to grab user and authority from a request
 module Utils::CurrentUser

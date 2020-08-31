@@ -14,7 +14,7 @@ shards:
 
   ameba:
     git: https://github.com/veelenga/ameba.git
-    version: 0.13.1
+    version: 0.13.2
 
   bindata:
     git: https://github.com/spider-gazelle/bindata.git
@@ -86,7 +86,7 @@ shards:
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 4.2.3
+    version: 4.2.4
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
