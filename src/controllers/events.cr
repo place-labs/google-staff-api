@@ -165,11 +165,11 @@ class Events < Application
       # https://docs.microsoft.com/en-us/graph/outlook-calendar-online-meetings?tabs=http#example-update-a-meeting-to-make-it-available-as-an-online-meeting
       conference: {
         createRequest: {
-          requestId: @request_id,
+          requestId:             @request_id,
           conferenceSolutionKey: {
-            type: "hangoutsMeet"
-          }
-        }
+            type: "hangoutsMeet",
+          },
+        },
       }
     )
 
