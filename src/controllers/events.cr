@@ -159,7 +159,18 @@ class Events < Application
       location: event.location,
       summary: event.title,
       description: event.body,
-      recurrence: event.recurrence ? CalendarEvent::Recurrence.recurrence_to_google(event_start, event.recurrence.not_nil!) : nil
+      recurrence: event.recurrence ? CalendarEvent::Recurrence.recurrence_to_google(event_start, event.recurrence.not_nil!) : nil,
+
+      # https://developers.google.com/calendar/v3/reference/events#conferenceData
+      # https://docs.microsoft.com/en-us/graph/outlook-calendar-online-meetings?tabs=http#example-update-a-meeting-to-make-it-available-as-an-online-meeting
+      conference: {
+        createRequest: {
+          requestId: @request_id,
+          conferenceSolutionKey: {
+            type: "hangoutsMeet"
+          }
+        }
+      }
     )
 
     # Update PlaceOS with an signal "/staff/event/changed"
