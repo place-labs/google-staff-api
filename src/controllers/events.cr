@@ -528,7 +528,8 @@ class Events < Application
         attendee = attendees.first
         eventmeta = attendee.event
 
-        event = get_event(event_id, eventmeta.resource_calendar)
+        # Get the event using the admin account
+        event = calendar_for.event(event_id, eventmeta.resource_calendar)
         head(:not_found) unless event
 
         system = get_placeos_client.systems.fetch(system_id)
