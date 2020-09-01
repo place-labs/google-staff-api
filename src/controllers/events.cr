@@ -637,7 +637,8 @@ class Events < Application
     event_id = route_params["id"]
     guest_email = route_params["guest_id"].downcase
 
-    if user_token.scope.includes?("guest")
+    is_guest_scope = user_token.scope.includes?("guest")
+    if is_guest_scope
       guest_event_id, system_id = user_token.user.roles
       guest_token_email = user_token.user.email.downcase
 
@@ -658,7 +659,7 @@ class Events < Application
       guest_details = attendee.guest
 
       # Check the event is still on
-      event = get_event(event_id, eventmeta.resource_calendar)
+      event = is_guest_scope ? calendar_for.event(event_id, eventmeta.resource_calendar) : get_event(event_id, eventmeta.resource_calendar)
       head(:not_found) unless event && event.status != "cancelled"
 
       # Update PlaceOS with an signal "staff/guest/checkin"
