@@ -328,6 +328,7 @@ class Events < Application
     update_attendees = !changes.attendees.nil?
     attendees = changes.attendees.try(&.map { |a| a.email }) || existing_attendees
     attendees << cal_id
+    attendees << host
     attendees.uniq!
 
     # Attendees that need to be deleted:
