@@ -42,7 +42,7 @@ shards:
 
   google:
     git: https://github.com/PlaceOS/google.git
-    version: 2.5.3
+    version: 2.5.4
 
   granite:
     git: https://github.com/amberframework/granite.git
