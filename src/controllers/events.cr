@@ -287,6 +287,8 @@ class Events < Application
 
     property attendees : Array(GuestDetails)?
 
+    property recurrence : CalendarEvent::Recurrence?
+
     property extension_data : JSON::Any?
   end
 
@@ -378,7 +380,7 @@ class Events < Application
       system = new_system
     end
 
-    parsed_start = Time.unix(event.event_start).in zone
+    parsed_start = Time.unix(event_start).in zone
     updated_event = if recurring_master && changes.recurrence
                       calendar.update(
                         event.id,
