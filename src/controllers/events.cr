@@ -312,6 +312,9 @@ class Events < Application
     event = get_event(event_id, cal_id)
     head(:not_found) unless event
 
+    # Does this event support changes to the recurring pattern
+    recurring_master = event.recurring_event_id.nil? || event.recurring_event_id == event.id
+
     # User details
     user = user_token.user.email
     host = event.organizer.try &.email || user
@@ -375,18 +378,35 @@ class Events < Application
       system = new_system
     end
 
-    updated_event = calendar.update(
-      event.id,
-      event_start: Time.unix(event_start).in(zone),
-      event_end: Time.unix(event_end).in(zone),
-      calendar_id: host,
-      attendees: update_attendees ? attendees : nil,
-      all_day: all_day,
-      visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
-      location: changes.location || event.location,
-      summary: changes.title || event.summary,
-      description: changes.body || event.description
-    )
+    parsed_start = Time.unix(event.event_start).in zone
+    updated_event = if recurring_master && changes.recurrence
+                      calendar.update(
+                        event.id,
+                        event_start: parsed_start,
+                        event_end: Time.unix(event_end).in(zone),
+                        calendar_id: host,
+                        attendees: update_attendees ? attendees : nil,
+                        all_day: all_day,
+                        visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
+                        location: changes.location || event.location,
+                        summary: changes.title || event.summary,
+                        description: changes.body || event.description,
+                        recurrence: CalendarEvent::Recurrence.recurrence_to_google(parsed_start, changes.recurrence.not_nil!),
+                      )
+                    else
+                      calendar.update(
+                        event.id,
+                        event_start: parsed_start,
+                        event_end: Time.unix(event_end).in(zone),
+                        calendar_id: host,
+                        attendees: update_attendees ? attendees : nil,
+                        all_day: all_day,
+                        visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
+                        location: changes.location || event.location,
+                        summary: changes.title || event.summary,
+                        description: changes.body || event.description,
+                      )
+                    end
 
     if system
       meta = if changing_room

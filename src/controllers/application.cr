@@ -159,6 +159,9 @@ abstract class Application < ActionController::Base
       extension_data: metadata.try(&.extension_data) || {} of Nil => Nil,
       recurring:      recurring,
       recurrence:     recurrence,
+      # MS version of this https://docs.microsoft.com/en-us/graph/api/resources/event?view=graph-rest-1.0#properties
+      # seriesMasterId
+      recurring_master_id: event.recurring_event_id,
     }
   end
 
