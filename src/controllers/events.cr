@@ -689,6 +689,7 @@ class Events < Application
       spawn do
         get_placeos_client.root.signal("staff/guest/checkin", {
           action:         :checkin,
+          checked_in:     checkin,
           system_id:      system_id,
           event_id:       event_id,
           host:           eventmeta.host_email,
