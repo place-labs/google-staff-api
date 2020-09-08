@@ -6,8 +6,15 @@ class Calendars < Application
   end
 
   get "/availability", :availability do
+    # Grab the system emails
     candidates = matching_calendar_ids
     calendars = candidates.keys
+
+    # Append calendars you might not have direct access too
+    # As typically a staff member can see anothers availability
+    all_calendars = Set.new((params["calendars"]? || "").split(',').map(&.strip).reject(&.empty?))
+    all_calendars.concat(calendars)
+    calendars = all_calendars.to_a
     render(json: [] of String) if calendars.empty?
 
     # Grab the user
