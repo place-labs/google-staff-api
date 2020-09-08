@@ -380,6 +380,27 @@ class Events < Application
       system = new_system
     end
 
+    # Keep the attendee state, on google at least when updating need to send existing state that is writable
+    # otherwise it seems to revert back to defaults
+    if update_attendees
+      existing_lookup = {} of String => ::Google::Calendar::Attendee
+      (event.attendees || [] of ::Google::Calendar::Attendee).each { |a| existing_lookup[a.email] = a }
+      attendees = attendees.map do |email|
+        if existing = existing_lookup[email]
+          {
+            :email => existing.email,
+            :displayName => existing.display_name,
+            :optional => existing.optional,
+            :responseStatus => existing.response_status,
+            :additionalGuests => existing.additional_guests,
+            :comment => existing.comment,
+          }
+        else
+          {:email => email}
+        end
+      end
+    end
+
     parsed_start = Time.unix(event_start).in zone
     updated_event = if recurring_master && changes.recurrence
                       calendar.update(
