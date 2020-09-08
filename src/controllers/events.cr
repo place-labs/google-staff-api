@@ -388,12 +388,12 @@ class Events < Application
       attendees = attendees.map do |email|
         if existing = existing_lookup[email]
           {
-            :email => existing.email,
-            :displayName => existing.display_name,
-            :optional => existing.optional,
-            :responseStatus => existing.response_status,
+            :email            => existing.email,
+            :displayName      => existing.display_name,
+            :optional         => existing.optional,
+            :responseStatus   => existing.response_status,
             :additionalGuests => existing.additional_guests,
-            :comment => existing.comment,
+            :comment          => existing.comment,
           }
         else
           {:email => email}
