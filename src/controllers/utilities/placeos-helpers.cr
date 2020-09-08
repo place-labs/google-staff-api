@@ -48,7 +48,7 @@ module Utils::PlaceOSHelpers
     system_calendars = {} of String => PlaceOS::Client::API::Models::System?
 
     # only obtain events for calendars the user has access to
-    calendars = Set.new((args.calendars || "").split(',').map(&.strip).reject(&.empty?))
+    calendars = Set.new((args.calendars || "").split(',').map(&.strip.downcase).reject(&.empty?))
     if calendars.size > 0
       (calendars & Set.new(get_user_calendars.map { |cal| cal[:id] })).each do |calendar|
         system_calendars[calendar] = nil
