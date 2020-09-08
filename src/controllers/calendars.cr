@@ -30,20 +30,19 @@ class Calendars < Application
     busy.each { |status| calendars.delete(status.calendar.downcase) unless status.availability.empty? }
 
     # Return the results
-    results = busy.map { |details|
-      if system = candidates[details.calendar]?
+    results = calendars.map { |email|
+      if system = candidates[email]?
         {
-          id:           details.calendar,
-          system:       system,
-          availability: details.availability,
+          id:     email,
+          system: system,
         }
       else
         {
-          id:           details.calendar,
-          availability: details.availability,
+          id: email,
         }
       end
     }
+
     render json: results
   end
 
@@ -69,15 +68,17 @@ class Calendars < Application
     busy = calendar.availability(calendars, period_start, period_end)
 
     # Return the results
-    results = busy.map { |email|
-      if system = candidates[email]?
+    results = busy.map { |details|
+      if system = candidates[details.calendar]?
         {
-          id:     email,
-          system: system,
+          id:           details.calendar,
+          system:       system,
+          availability: details.availability,
         }
       else
         {
-          id: email,
+          id:           details.calendar,
+          availability: details.availability,
         }
       end
     }
