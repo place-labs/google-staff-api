@@ -64,9 +64,13 @@ class Events < Application
 
     # return array of standardised events
     render json: results.map { |(calendar_id, system, event)|
+      parent_meta = false
       metadata = metadatas[event.id]?
-      metadata = metadatas[event.recurring_event_id]? if event.recurring_event_id
-      standard_event(calendar_id, system, event, metadata)
+      if metadata.nil? && event.recurring_event_id
+        metadata = metadatas[event.recurring_event_id]?
+        parent_meta = true
+      end
+      standard_event(calendar_id, system, event, metadata, parent_meta)
     }
   end
 
@@ -356,8 +360,8 @@ class Events < Application
 
     event_start = changes.event_start
     event_end = changes.event_end
-    event_start = event_start ? event_start : (event.start.date_time || event.start.date).not_nil!.to_unix
-    event_end = event_end ? event_end : (event.end.try(&.date_time) || event.end.try(&.date)).not_nil!.to_unix
+    event_start = event_start ? event_start : event.start.not_nil!.time.to_unix
+    event_end = event_end ? event_end : event.end.not_nil!.time.to_unix
     all_day = changes.all_day.nil? ? !!event.start.date : changes.all_day
     priv = if changes.private == nil
              event.visibility.in?({"private", "confidential"})
@@ -617,9 +621,13 @@ class Events < Application
       event = get_event(event_id, cal_id)
       head(:not_found) unless event
 
+      parent_meta = false
       metadata = EventMetadata.find("#{system_id}-#{event_id}")
-      metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}") if event.recurring_event_id
-      render json: standard_event(cal_id, system, event, metadata)
+      if event.recurring_event_id
+        metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
+        parent_meta = true
+      end
+      render json: standard_event(cal_id, system, event, metadata, parent_meta)
     end
 
     head :bad_request
@@ -674,11 +682,13 @@ class Events < Application
     render :bad_request, json: {error: "missing system_id param"} unless system_id
 
     # Grab meeting metadata if it exists
+    parent_meta = false
     metadata = EventMetadata.find("#{system_id}-#{event_id}")
     if metadata.nil?
       if cal_id = get_placeos_client.systems.fetch(system_id).email
         event = get_event(event_id, cal_id)
         metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}") if event && event.recurring_event_id
+        parent_meta = !!metadata
       end
     end
     render(json: [] of Nil) unless metadata
@@ -692,7 +702,7 @@ class Events < Application
     Guest.where(:id, :in, visitors.map(&.email)).each { |guest| guests[guest.id.not_nil!] = guest }
 
     # Merge the visitor data with guest profiles
-    visitors = visitors.map { |visitor| attending_guest(visitor, guests[visitor.email]?) }
+    visitors = visitors.map { |visitor| attending_guest(visitor, guests[visitor.email]?, parent_meta) }
     render json: visitors
   end
 
@@ -714,6 +724,16 @@ class Events < Application
     end
 
     metadata_id = "#{system_id}-#{event_id}"
+    # Ensure the metadata for this meeting is in place
+    metadata = EventMetadata.find(metadata_id)
+    if metadata.nil?
+      if cal_id = get_placeos_client.systems.fetch(system_id).email
+        event = get_event(event_id, cal_id)
+        metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}") if event && event.recurring_event_id
+        EventMetadata.migrate_recurring_metadata(system_id, event, metadata) if event && metadata
+      end
+    end
+
     attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }
     if attendees.size > 0
       attendee = attendees.first

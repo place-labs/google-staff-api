@@ -62,21 +62,21 @@ abstract class Application < ActionController::Base
     end
   end
 
-  def attending_guest(visitor : Attendee?, guest : Guest?)
+  def attending_guest(visitor : Attendee?, guest : Guest?, parent_meta = false)
     if guest
       {% begin %}
         {
           {% for key in [:email, :name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous, :extension_data] %}
             {{key.id}}: guest.{{key.id}},
           {% end %}
-          checked_in:     visitor.try(&.checked_in) || false,
+          checked_in:     parent_meta ? false : visitor.try(&.checked_in) || false,
           visit_expected: visitor.try(&.visit_expected) || false,
         }
       {% end %}
     elsif visitor
       {
         email:          visitor.email,
-        checked_in:     visitor.checked_in,
+        checked_in:     parent_meta ? false : visitor.checked_in,
         visit_expected: visitor.visit_expected,
       }
     else
@@ -88,7 +88,7 @@ abstract class Application < ActionController::Base
   NOP_ATTEND   = [] of Attendee
   NOP_G_ATTEND = [] of ::Google::Calendar::Attendee
 
-  def standard_event(calendar_id, system, event, metadata)
+  def standard_event(calendar_id, system, event, metadata, is_parent_metadata = false)
     visitors = {} of String => Attendee
 
     if event.status == "cancelled"
@@ -106,7 +106,7 @@ abstract class Application < ActionController::Base
           name:            attendee.display_name || email,
           email:           email,
           response_status: attendee.response_status,
-          checked_in:      visitor.checked_in,
+          checked_in:      is_parent_metadata ? false : visitor.checked_in,
           visit_expected:  visitor.visit_expected,
           resource:        attendee.resource,
         }
