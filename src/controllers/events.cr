@@ -397,7 +397,7 @@ class Events < Application
       existing_lookup = {} of String => ::Google::Calendar::Attendee
       (event.attendees || [] of ::Google::Calendar::Attendee).each { |a| existing_lookup[a.email] = a }
       attendees = attendees.map do |email|
-        if existing = existing_lookup[email]
+        if existing = existing_lookup[email]?
           {
             :email            => existing.email,
             :displayName      => existing.display_name,
