@@ -48,9 +48,14 @@ class Events < Application
 
     # Grab any existing eventmeta data
     metadatas = {} of String => EventMetadata
-    metadata_ids = results.map { |(calendar_id, system, event)|
-      system.nil? ? nil : "#{system.id}-#{event.id}"
-    }.compact
+    metadata_ids = [] of String
+    results.each { |(calendar_id, system, event)|
+      if system
+        metadata_ids << "#{system.id}-#{event.id}"
+        metadata_ids << "#{system.id}-#{event.recurring_event_id}" if event.recurring_event_id
+      end
+    }
+    metadata_ids.uniq!
 
     # Don't perform the query if there are no calendar entries
     if !metadata_ids.empty?
@@ -59,7 +64,9 @@ class Events < Application
 
     # return array of standardised events
     render json: results.map { |(calendar_id, system, event)|
-      standard_event(calendar_id, system, event, metadatas[event.id]?)
+      metadata = metadatas[event.id]?
+      metadata = metadatas[event.recurring_event_id]? if event.recurring_event_id
+      standard_event(calendar_id, system, event, metadata)
     }
   end
 
@@ -432,19 +439,26 @@ class Events < Application
                     end
 
     if system
-      meta = if changing_room
-               old_meta = EventMetadata.find("#{system.id}-#{event.id}")
-               if old_meta
-                 new_meta = EventMetadata.new
-                 new_meta.extension_data = old_meta.extension_data
-                 old_meta.destroy
-                 new_meta
-               else
-                 EventMetadata.new
-               end
-             else
-               EventMetadata.find("#{system.id}-#{event.id}") || EventMetadata.new
-             end
+      if changing_room
+        if old_meta = EventMetadata.find("#{system.id}-#{event.id}")
+          meta = EventMetadata.new
+          meta.extension_data = old_meta.extension_data
+          old_meta.destroy
+          meta
+        end
+      else
+        meta = EventMetadata.find("#{system.id}-#{event.id}")
+      end
+
+      # migrate the parent metadata to this event
+      if meta.nil? && event.recurring_event_id
+        if old_meta = EventMetadata.find("#{system.id}-#{event.recurring_event_id}")
+          meta = EventMetadata.new
+          meta.extension_data = old_meta.extension_data
+        end
+      end
+
+      meta = meta || EventMetadata.new
 
       meta.system_id = system.id.not_nil!
       meta.event_id = event.id
@@ -604,6 +618,7 @@ class Events < Application
       head(:not_found) unless event
 
       metadata = EventMetadata.find("#{system_id}-#{event_id}")
+      metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}") if event.recurring_event_id
       render json: standard_event(cal_id, system, event, metadata)
     end
 
@@ -660,6 +675,12 @@ class Events < Application
 
     # Grab meeting metadata if it exists
     metadata = EventMetadata.find("#{system_id}-#{event_id}")
+    if metadata.nil?
+      if cal_id = get_placeos_client.systems.fetch(system_id).email
+        event = get_event(event_id, cal_id)
+        metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}") if event && event.recurring_event_id
+      end
+    end
     render(json: [] of Nil) unless metadata
 
     # Find anyone who is attending
