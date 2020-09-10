@@ -42,6 +42,7 @@ class Guests < Application
         begin
           results.concat calendar.events(responses[request]).items.map { |event| {calendar_id, system, event} }
         rescue error
+          errors += 1
           Log.warn(exception: error) { "error fetching events for #{calendar_id}" }
         end
       end
