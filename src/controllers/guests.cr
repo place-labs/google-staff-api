@@ -97,6 +97,7 @@ class Guests < Application
             title:       event.summary,
             host:        event.organizer.try &.email,
             creator:     event.creator.try &.email,
+            private:     event.visibility.in?({"private", "confidential"}),
             event_start: event.start.time.to_unix,
             event_end:   event.end.try { |time| (time.date_time || time.date).try &.to_unix },
             timezone:    event.start.time_zone,
