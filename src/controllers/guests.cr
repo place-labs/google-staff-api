@@ -51,17 +51,17 @@ class Guests < Application
       # Grab any existing eventmeta data
       metadata_ids = Set(String).new
       metadata_recurring_ids = Set(String).new
-      meeting_lookup = {} of String => Tuple(PlaceOS::Client::API::Models::System, Google::Calendar::Event)
+      meeting_lookup = {} of String => Tuple(String, PlaceOS::Client::API::Models::System, Google::Calendar::Event)
       results.each { |(calendar_id, system, event)|
         if system
           metadata_id = "#{system.id}-#{event.id}"
           metadata_ids << metadata_id
-          meeting_lookup[metadata_id] = {system, event}
+          meeting_lookup[metadata_id] = {calendar_id, system, event}
           if event.recurring_event_id
             metadata_id = "#{system.id}-#{event.recurring_event_id}"
             metadata_ids << metadata_id
             metadata_recurring_ids << metadata_id
-            meeting_lookup[metadata_id] = {system, event}
+            meeting_lookup[metadata_id] = {calendar_id, system, event}
           end
         end
       }
@@ -88,10 +88,11 @@ class Guests < Application
         # Prevent a database lookup
         include_meeting = nil
         if meet = meeting_lookup[visitor.event_id]?
-          system, event = meet
+          calendar_id, system, event = meet
           include_meeting = {
             id:          event.id,
             status:      event.status,
+            calendar:    calendar_id,
             title:       event.summary,
             host:        event.organizer.try &.email,
             creator:     event.creator.try &.email,
