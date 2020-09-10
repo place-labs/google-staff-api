@@ -10,7 +10,7 @@ shards:
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
-    version: 2.0.1
+    version: 2.0.2
 
   ameba:
     git: https://github.com/veelenga/ameba.git
@@ -42,7 +42,7 @@ shards:
 
   google:
     git: https://github.com/PlaceOS/google.git
-    version: 2.5.4
+    version: 2.6.0
 
   granite:
     git: https://github.com/amberframework/granite.git
@@ -66,7 +66,7 @@ shards:
 
   lucky_router:
     git: https://github.com/luckyframework/lucky_router.git
-    version: 0.3.0
+    version: 0.3.1
 
   neuroplastic:
     git: https://github.com/spider-gazelle/neuroplastic.git
@@ -86,7 +86,7 @@ shards:
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 4.2.4
+    version: 4.2.5
 
   promise:
     git: https://github.com/spider-gazelle/promise.git

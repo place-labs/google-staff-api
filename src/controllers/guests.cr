@@ -21,36 +21,31 @@ class Guests < Application
       user = user_token.user.email
       calendar = calendar_for(user)
 
-      responses = Promise.all(calendars.map { |calendar_id, system|
-        Promise.defer {
-          events = calendar.events(
-            calendar_id,
-            period_start,
-            period_end,
-            showDeleted: false
-          ).items.map { |event| {calendar_id, system, event} }
+      # Grab events in batches
+      requests = [] of HTTP::Request
+      mappings = calendars.map { |calendar_id, system|
+        request = calendar.events_request(
+          calendar_id,
+          period_start,
+          period_end,
+          showDeleted: false
+        )
+        requests << request
+        {request, calendar_id, system}
+      }
+      responses = calendar.batch(requests)
 
-          # no error, the cal id and the list of the events
-          {"", calendar_id, events}
-        }.catch { |error|
-          sys_name = system.try(&.name)
-          calendar_id = sys_name ? "#{sys_name} (#{calendar_id})" : calendar_id
-          {error.message || "", calendar_id, [] of Tuple(String, PlaceOS::Client::API::Models::System?, Google::Calendar::Event)}
-        }
-      }).get
-
-      # if there are any errors let's log them and expose them via the API
-      # done outside the promise so we have all the tagging associated with this fiber
-      calendar_errors = [] of String
-      responses.select { |result| result[0].presence }.each do |error|
-        calendar_id = error[1]
-        calendar_errors << calendar_id
-        Log.warn { "error fetching events for #{calendar_id}: #{error[0]}" }
+      # Process the response (map requests back to responses)
+      errors = 0
+      results = [] of Tuple(String, PlaceOS::Client::API::Models::System?, Google::Calendar::Event)
+      mappings.each do |(request, calendar_id, system)|
+        begin
+          results.concat calendar.events(responses[request]).items.map { |event| {calendar_id, system, event} }
+        rescue error
+          Log.warn(exception: error) { "error fetching events for #{calendar_id}" }
+        end
       end
-      response.headers["X-Calendar-Errors"] = calendar_errors.size.to_s unless calendar_errors.empty?
-
-      # return the valid results
-      results = responses.map { |result| result[2] }.flatten
+      response.headers["X-Calendar-Errors"] = errors.to_s if errors > 0
 
       # Grab any existing eventmeta data
       metadata_ids = Set(String).new
