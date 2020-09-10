@@ -8,7 +8,7 @@ class Events < Application
     period_start = Time.unix(query_params["period_start"].to_i64)
     period_end = Time.unix(query_params["period_end"].to_i64)
     calendars = matching_calendar_ids
-    render(json: [] of Nil) unless calendars.size > 0
+    render(json: [] of Nil) if calendars.empty?
 
     include_cancelled = query_params["include_cancelled"]? == "true"
     user = user_token.user.email
@@ -41,7 +41,6 @@ class Events < Application
       calendar_errors << calendar_id
       Log.warn { "error fetching events for #{calendar_id}: #{error[0]}" }
     end
-    response.headers["X-Calendar-Errors"] = calendar_errors unless calendar_errors.empty?
 
     # return the valid results
     results = responses.map { |result| result[2] }.flatten

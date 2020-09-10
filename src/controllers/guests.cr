@@ -45,7 +45,6 @@ class Guests < Application
         calendar_errors << calendar_id
         Log.warn { "error fetching events for #{calendar_id}: #{error[0]}" }
       end
-      response.headers["X-Calendar-Errors"] = calendar_errors unless calendar_errors.empty?
 
       # return the valid results
       results = responses.map { |result| result[2] }.flatten
