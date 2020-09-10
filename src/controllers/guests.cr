@@ -53,13 +53,17 @@ class Guests < Application
       # Grab any existing eventmeta data
       metadata_ids = Set(String).new
       metadata_recurring_ids = Set(String).new
+      meeting_lookup = {} of String => Tuple(PlaceOS::Client::API::Models::System, Google::Calendar::Event)
       results.each { |(calendar_id, system, event)|
         if system
-          metadata_ids << "#{system.id}-#{event.id}"
+          metadata_id = "#{system.id}-#{event.id}"
+          metadata_ids << metadata_id
+          meeting_lookup[metadata_id] = {system, event}
           if event.recurring_event_id
             metadata_id = "#{system.id}-#{event.recurring_event_id}"
             metadata_ids << metadata_id
             metadata_recurring_ids << metadata_id
+            meeting_lookup[metadata_id] = {system, event}
           end
         end
       }
@@ -82,18 +86,25 @@ class Guests < Application
       guests = {} of String => Guest
       Guest.where(:email, :in, attendees.keys).each { |guest| guests[guest.email.not_nil!] = guest }
 
-      # Obtain the meeting data for each guest
-      metadata_lookup = {} of String => EventMetadata
-      EventMetadata.where(:id, :in, attended_metadata_ids.to_a).each { |evt| metadata_lookup[evt.id.not_nil!] = evt }
-
       render json: attendees.map { |email, visitor|
         # Prevent a database lookup
-        include_meeting = false
-        if meeting = metadata_lookup[visitor.event_id]?
-          visitor.event = meeting
-          include_meeting = true
+        include_meeting = nil
+        if meet = meeting_lookup[visitor.event_id]?
+          system, event = meet
+          include_meeting = {
+            id:          event.id,
+            status:      event.status,
+            title:       event.summary,
+            host:        event.organizer.try &.email,
+            creator:     event.creator.try &.email,
+            event_start: event.start.time.to_unix,
+            event_end:   event.end.try { |time| (time.date_time || time.date).try &.to_unix },
+            timezone:    event.start.time_zone,
+            all_day:     !!event.start.date,
+            system:      system,
+          }
         end
-        attending_guest(visitor, guests[email]?, include_meeting_details: include_meeting)
+        attending_guest(visitor, guests[email]?, meeting_details: include_meeting)
       }
     elsif query.empty?
       # Return the first 1500 guests

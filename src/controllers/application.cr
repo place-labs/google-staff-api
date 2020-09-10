@@ -62,7 +62,7 @@ abstract class Application < ActionController::Base
     end
   end
 
-  def attending_guest(visitor : Attendee?, guest : Guest?, parent_meta = false, include_meeting_details = false)
+  def attending_guest(visitor : Attendee?, guest : Guest?, parent_meta = false, meeting_details = nil)
     result = if guest
                {% begin %}
                 {
@@ -83,16 +83,7 @@ abstract class Application < ActionController::Base
                raise "requires either an attendee or a guest"
              end
 
-    if include_meeting_details
-      vis = visitor.not_nil!
-      result.merge({
-        event: {
-          system_id: vis.event.system_id,
-          event_id:  vis.event.event_id,
-        },
-      })
-    end
-
+    result = result.merge({event: meeting_details}) if meeting_details
     result
   end
 
