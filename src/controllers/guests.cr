@@ -9,29 +9,63 @@ class Guests < Application
 
   def index
     query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
-    period_start = query_params["period_start"]?
-    if period_start
-      starting = period_start.to_i64
-      ending = query_params["period_end"].to_i64
+    starting = query_params["period_start"]?
+    if starting
+      period_start = Time.unix(starting.to_i64)
+      period_end = Time.unix(query_params["period_end"].to_i64)
+
+      # We want a subset of the calendars
+      calendars = matching_calendar_ids
+      render(json: [] of Nil) if calendars.empty?
+
+      calendar = calendar_for
+      responses = Promise.all(calendars.map { |calendar_id, system|
+        Promise.defer {
+          events = calendar.events(
+            calendar_id,
+            period_start,
+            period_end,
+            showDeleted: false
+          ).items.map { |event| {calendar_id, system, event} }
+
+          # no error, the cal id and the list of the events
+          {"", calendar_id, events}
+        }.catch { |error|
+          sys_name = system.try(&.name)
+          calendar_id = sys_name ? "#{sys_name} (#{calendar_id})" : calendar_id
+          {error.message || "", calendar_id, [] of Tuple(String, PlaceOS::Client::API::Models::System?, Google::Calendar::Event)}
+        }
+      }).get
+
+      # if there are any errors let's log them and expose them via the API
+      # done outside the promise so we have all the tagging associated with this fiber
+      calendar_errors = [] of String
+      responses.select { |result| result[0].presence }.each do |error|
+        calendar_id = error[1]
+        calendar_errors << calendar_id
+        Log.warn { "error fetching events for #{calendar_id}: #{error[0]}" }
+      end
+      response.headers["X-Calendar-Errors"] = calendar_errors unless calendar_errors.empty?
+
+      # return the valid results
+      results = responses.map { |result| result[2] }.flatten
+
+      # Grab any existing eventmeta data
+      metadata_ids = [] of String
+      results.each { |(calendar_id, system, event)|
+        if system
+          metadata_ids << "#{system.id}-#{event.id}"
+          metadata_ids << "#{system.id}-#{event.recurring_event_id}" if event.recurring_event_id
+        end
+      }
+      metadata_ids.uniq!
+
+      # Don't perform the query if there are no calendar entries
+      render(json: [] of Nil) if metadata_ids.empty?
 
       # Return the guests visiting today
       attendees = {} of String => Attendee
-
-      # We want a subset of the calendars
-      if query_params["zone_ids"]? || query_params["system_ids"]?
-        system_ids = matching_calendar_ids.values.map(&.try(&.id))
-        render(json: [] of Nil) if system_ids.empty?
-
-        Attendee.all(
-          "WHERE event_id IN (SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ? AND system_id IN ('#{system_ids.join(%(','))}'))",
-          [ending, starting]
-        ).each { |attendee| attendees[attendee.email] = attendee }
-      else
-        query = Attendee.all(
-          "WHERE event_id IN (SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?)",
-          [ending, starting]
-        ).each { |attendee| attendees[attendee.email] = attendee }
-      end
+      Attendee.where(:event_id, :in, metadata_ids).each { |attend| attendees[attend.guest_id] = attend }
 
       render(json: [] of Nil) if attendees.empty?
 
@@ -40,7 +74,7 @@ class Guests < Application
 
       render json: attendees.map { |email, visitor| attending_guest(visitor, guests[email]?) }
     elsif query.empty?
-      # Return the first 1000 guests
+      # Return the first 1500 guests
       render json: Guest.order(:name).limit(1500).map { |g| attending_guest(nil, g) }
     else
       # Return guests based on the filter query
