@@ -56,15 +56,22 @@ class EventMetadata < Granite::Base
   end
 
   def self.migrate_recurring_metadata(system_id : String, recurrance : Google::Calendar::Event, parent_metadata : EventMetadata)
-    metadata = EventMetadata.new
-    metadata.extension_data = parent_metadata.extension_data
-    metadata.system_id = system_id
-    metadata.event_id = recurrance.id
-    metadata.event_start = recurrance.start.not_nil!.time.to_unix
-    metadata.event_end = recurrance.end.not_nil!.time.to_unix
-    metadata.resource_calendar = parent_metadata.resource_calendar
-    metadata.host_email = parent_metadata.host_email
-    metadata.save!
+    begin
+      metadata = EventMetadata.new
+      metadata.extension_data = parent_metadata.extension_data
+      metadata.system_id = system_id
+      metadata.event_id = recurrance.id
+      metadata.event_start = recurrance.start.not_nil!.time.to_unix
+      metadata.event_end = recurrance.end.not_nil!.time.to_unix
+      metadata.resource_calendar = parent_metadata.resource_calendar
+      metadata.host_email = parent_metadata.host_email
+      metadata.save!
+    rescue ::Granite::RecordNotSaved
+      # if two requests requests trigger a migrate simultaneously then one will lose
+      # super hacky but should do the trick to prevent client side errors
+      sleep 1
+      return
+    end
 
     parent_metadata.attendees.each do |attendee|
       if attendee.visit_expected
@@ -76,6 +83,6 @@ class EventMetadata < Granite::Base
       end
     end
 
-    metadata
+    nil
   end
 end
