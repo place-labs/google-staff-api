@@ -69,17 +69,32 @@ class Guests < Application
 
       # Return the guests visiting today
       attendees = {} of String => Attendee
+      attended_metadata_ids = Set(String).new
       Attendee.where(:event_id, :in, metadata_ids.to_a).each do |attend|
         attend.checked_in = false if attend.event_id.in?(metadata_recurring_ids)
         attendees[attend.guest_id] = attend
+        attended_metadata_ids << attend.event_id
       end
 
       render(json: [] of Nil) if attendees.empty?
 
+      # Grab as much information about the guests as possible
       guests = {} of String => Guest
       Guest.where(:email, :in, attendees.keys).each { |guest| guests[guest.email.not_nil!] = guest }
 
-      render json: attendees.map { |email, visitor| attending_guest(visitor, guests[email]?) }
+      # Obtain the meeting data for each guest
+      metadata_lookup = {} of String => EventMetadata
+      EventMetadata.where(:id, :in, attended_metadata_ids.to_a).each { |evt| metadata_lookup[evt.id.not_nil!] = evt }
+
+      render json: attendees.map { |email, visitor|
+        # Prevent a database lookup
+        include_meeting = false
+        if meeting = metadata_lookup[visitor.event_id]?
+          visitor.event = meeting
+          include_meeting = true
+        end
+        attending_guest(visitor, guests[email]?, include_meeting_details: include_meeting)
+      }
     elsif query.empty?
       # Return the first 1500 guests
       render json: Guest.order(:name).limit(1500).map { |g| attending_guest(nil, g) }

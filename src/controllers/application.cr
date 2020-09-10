@@ -62,26 +62,38 @@ abstract class Application < ActionController::Base
     end
   end
 
-  def attending_guest(visitor : Attendee?, guest : Guest?, parent_meta = false)
-    if guest
-      {% begin %}
-        {
-          {% for key in [:email, :name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous, :extension_data] %}
-            {{key.id}}: guest.{{key.id}},
-          {% end %}
-          checked_in:     parent_meta ? false : visitor.try(&.checked_in) || false,
-          visit_expected: visitor.try(&.visit_expected) || false,
-        }
-      {% end %}
-    elsif visitor
-      {
-        email:          visitor.email,
-        checked_in:     parent_meta ? false : visitor.checked_in,
-        visit_expected: visitor.visit_expected,
-      }
-    else
-      raise "requires either an attendee or a guest"
+  def attending_guest(visitor : Attendee?, guest : Guest?, parent_meta = false, include_meeting_details = false)
+    result = if guest
+               {% begin %}
+                {
+                  {% for key in [:email, :name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous, :extension_data] %}
+                    {{key.id}}: guest.{{key.id}},
+                  {% end %}
+                  checked_in:     parent_meta ? false : visitor.try(&.checked_in) || false,
+                  visit_expected: visitor.try(&.visit_expected) || false,
+                }
+               {% end %}
+             elsif visitor
+               {
+                 email:          visitor.email,
+                 checked_in:     parent_meta ? false : visitor.checked_in,
+                 visit_expected: visitor.visit_expected,
+               }
+             else
+               raise "requires either an attendee or a guest"
+             end
+
+    if include_meeting_details
+      vis = visitor.not_nil!
+      result.merge({
+        event: {
+          system_id: vis.event.system_id,
+          event_id:  vis.event.event_id,
+        },
+      })
     end
+
+    result
   end
 
   # So we don't have to allocate array objects
