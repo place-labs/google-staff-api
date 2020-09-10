@@ -18,7 +18,9 @@ class Guests < Application
       calendars = matching_calendar_ids
       render(json: [] of Nil) if calendars.empty?
 
-      calendar = calendar_for
+      user = user_token.user.email
+      calendar = calendar_for(user)
+
       responses = Promise.all(calendars.map { |calendar_id, system|
         Promise.defer {
           events = calendar.events(
