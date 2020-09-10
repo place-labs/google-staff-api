@@ -51,21 +51,28 @@ class Guests < Application
       results = responses.map { |result| result[2] }.flatten
 
       # Grab any existing eventmeta data
-      metadata_ids = [] of String
+      metadata_ids = Set(String).new
+      metadata_recurring_ids = Set(String).new
       results.each { |(calendar_id, system, event)|
         if system
           metadata_ids << "#{system.id}-#{event.id}"
-          metadata_ids << "#{system.id}-#{event.recurring_event_id}" if event.recurring_event_id
+          if event.recurring_event_id
+            metadata_id = "#{system.id}-#{event.recurring_event_id}"
+            metadata_ids << metadata_id
+            metadata_recurring_ids << metadata_id
+          end
         end
       }
-      metadata_ids.uniq!
 
       # Don't perform the query if there are no calendar entries
       render(json: [] of Nil) if metadata_ids.empty?
 
       # Return the guests visiting today
       attendees = {} of String => Attendee
-      Attendee.where(:event_id, :in, metadata_ids).each { |attend| attendees[attend.guest_id] = attend }
+      Attendee.where(:event_id, :in, metadata_ids.to_a).each do |attend|
+        attend.checked_in = false if attend.event_id.in?(metadata_recurring_ids)
+        attendees[attend.guest_id] = attend
+      end
 
       render(json: [] of Nil) if attendees.empty?
 
