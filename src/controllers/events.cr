@@ -47,7 +47,7 @@ class Events < Application
     results.each { |(calendar_id, system, event)|
       if system
         metadata_ids << "#{system.id}-#{event.id}"
-        metadata_ids << "#{system.id}-#{event.recurring_event_id}" if event.recurring_event_id
+        metadata_ids << "#{system.id}-#{event.recurring_event_id}" if event.recurring_event_id && event.id != event.recurring_event_id
       end
     }
     metadata_ids.uniq!
@@ -618,7 +618,7 @@ class Events < Application
 
       parent_meta = false
       metadata = EventMetadata.find("#{system_id}-#{event_id}")
-      if event.recurring_event_id
+      if event.recurring_event_id && event.id != event.recurring_event_id
         metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
         parent_meta = true
       end

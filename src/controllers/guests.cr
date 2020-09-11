@@ -57,7 +57,7 @@ class Guests < Application
           metadata_id = "#{system.id}-#{event.id}"
           metadata_ids << metadata_id
           meeting_lookup[metadata_id] = {calendar_id, system, event}
-          if event.recurring_event_id
+          if event.recurring_event_id && event.id != event.recurring_event_id
             metadata_id = "#{system.id}-#{event.recurring_event_id}"
             metadata_ids << metadata_id
             metadata_recurring_ids << metadata_id
