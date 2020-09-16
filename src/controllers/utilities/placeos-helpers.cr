@@ -11,7 +11,7 @@ module Utils::PlaceOSHelpers
   def get_user_calendars
     user = user_token.user.email
     calendar = calendar_for(user)
-    calendar.calendar_list.reject { |item| item.deleted }.map do |item|
+    calendar.calendar_list(Google::Access::Writer).reject { |item| item.deleted }.map do |item|
       {
         id:      item.id,
         summary: item.summary,
