@@ -578,16 +578,27 @@ class Events < Application
 
       head :forbidden unless event_id == guest_event_id
 
+      # grab the calendar ID
+      client = get_placeos_client.systems
+      calendar_id = client.fetch(system_id).email.presence
+      head(:not_found) unless calendar_id
+
+      # Get the event using the admin account
+      event = calendar_for.event(event_id, calendar_id)
+      head(:not_found) unless event
+
       metadata_id = "#{system_id}-#{event_id}"
       attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }
+
+      # check recurring master
+      if attendees.size == 0 && event.recurring_event_id.presence && event.recurring_event_id != event.id
+        metadata_id = "#{system_id}-#{event.recurring_event_id}"
+        attendees = Attendee.where(guest_id: guest_email, event_id: metadata_id).limit(1).map { |at| at }
+      end
 
       if attendees.size > 0
         attendee = attendees.first
         eventmeta = attendee.event
-
-        # Get the event using the admin account
-        event = calendar_for.event(event_id, eventmeta.resource_calendar)
-        head(:not_found) unless event
 
         system = get_placeos_client.systems.fetch(system_id)
         render json: standard_event(eventmeta.resource_calendar, system, event, eventmeta)
