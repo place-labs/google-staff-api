@@ -2,7 +2,7 @@ class Events < Application
   base "/api/staff/v1/events"
 
   # Skip scope check for a single route
-  skip_action :check_jwt_scope, only: [:show, :guest_checkin]
+  skip_action :check_jwt_scope, only: [:show, :guest_checkin, :update]
 
   def index
     period_start = Time.unix(query_params["period_start"].to_i64)
@@ -302,6 +302,13 @@ class Events < Application
     event_id = route_params["id"]
     changes = UpdateCalEvent.from_json(request.body.as(IO))
 
+    # Guests can update extension_data to indicate their order
+    if user_token.scope.includes?("guest")
+      guest_event_id, guest_system_id = user_token.user.roles
+
+      head :forbidden unless changes.extension_data && event_id == guest_event_id && query_params["system_id"]? == guest_system_id
+    end
+
     placeos_client = get_placeos_client
 
     cal_id = if user_cal = query_params["calendar"]?
@@ -319,6 +326,35 @@ class Events < Application
              end
     event = get_event(event_id, cal_id)
     head(:not_found) unless event
+
+    # Guests can only update the extension_data
+    if user_token.scope.includes?("guest")
+      meta = EventMetadata.find("#{system_id}-#{event.id}")
+      if meta.nil? && event.recurring_event_id
+        if old_meta = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
+          meta = EventMetadata.new
+          meta.extension_data = old_meta.extension_data
+        end
+      end
+      meta = meta || EventMetadata.new
+
+      meta.system_id = system_id.not_nil!
+      meta.event_id = event.id
+      meta.event_start = event.start.not_nil!.time.to_unix
+      meta.event_end = event.end.not_nil!.time.to_unix
+      meta.resource_calendar = system.not_nil!.email.not_nil!
+      meta.host_email = event.organizer.not_nil!.email.not_nil!
+
+      if extension_data = changes.extension_data
+        data = meta.extension_data.as_h
+        extension_data.as_h.each { |key, value| data[key] = value }
+        meta.extension_data = nil
+        meta.ext_data = data.to_json
+        meta.save!
+      end
+
+      render json: standard_event(cal_id, system, event, meta)
+    end
 
     # Does this event support changes to the recurring pattern
     recurring_master = event.recurring_event_id.nil? || event.recurring_event_id == event.id
