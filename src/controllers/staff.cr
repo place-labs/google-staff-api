@@ -90,4 +90,4 @@ class Staff < Application
   end
 end
 
-Staff.rate_limiter
+spawn { Staff.rate_limiter }
