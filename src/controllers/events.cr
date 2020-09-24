@@ -475,17 +475,14 @@ class Events < Application
 
     if system
       if changing_room
-        if old_meta = EventMetadata.find("#{system.id}-#{event.id}")
-          meta = EventMetadata.new
-          meta.extension_data = old_meta.extension_data
+        if old_meta = EventMetadata.find("#{system_id}-#{event.id}")
+          EventMetadata.migrate_recurring_metadata(system.id, event, old_meta)
           old_meta.destroy
-          meta
         end
-      else
-        meta = EventMetadata.find("#{system.id}-#{event.id}")
       end
+      meta = EventMetadata.find("#{system.id}-#{event.id}")
 
-      # migrate the parent metadata to this event
+      # migrate the parent metadata to this event if not existing
       if meta.nil? && event.recurring_event_id
         if old_meta = EventMetadata.find("#{system.id}-#{event.recurring_event_id}")
           meta = EventMetadata.new
@@ -513,10 +510,10 @@ class Events < Application
       end
 
       # Grab the list of externals that might be attending
-      if update_attendees
+      if update_attendees || changing_room
         existing_lookup = {} of String => Attendee
         existing = meta.attendees.to_a
-        existing.each { |a| existing_lookup[a.email] = a } unless changing_room
+        existing.each { |a| existing_lookup[a.email] = a }
 
         if !remove_attendees.empty?
           remove_attendees.each do |email|
@@ -527,7 +524,7 @@ class Events < Application
           end
         end
 
-        attending = changes.try &.attendees.try(&.reject { |attendee|
+        attending = changes.attendees.try(&.reject { |attendee|
           # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
           attendee.visit_expected.nil?
         })
@@ -564,7 +561,7 @@ class Events < Application
             attend.visit_expected = true
             attend.save!
 
-            if !previously_visiting
+            if !previously_visiting || changing_room
               spawn do
                 sys = system.not_nil!
                 guest = attend.guest
@@ -581,6 +578,26 @@ class Events < Application
                   attendee_email: guest.email,
                 })
               end
+            end
+          end
+        elsif changing_room
+          existing.each do |attend|
+            next unless attend.visit_expected
+            spawn do
+              sys = system.not_nil!
+              guest = attend.guest
+
+              placeos_client.root.signal("staff/guest/attending", {
+                action:         :meeting_update,
+                system_id:      sys.id,
+                event_id:       event_id,
+                host:           host,
+                resource:       sys.email,
+                event_summary:  updated_event.summary,
+                event_starting: event_start,
+                attendee_name:  guest.name,
+                attendee_email: guest.email,
+              })
             end
           end
         end
