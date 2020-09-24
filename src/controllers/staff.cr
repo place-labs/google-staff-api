@@ -1,6 +1,20 @@
 class Staff < Application
   base "/api/staff/v1/people"
 
+  # burst 2 requests, otherwise is 5 requests a second
+  @@rate_limit : Channel(Nil) = Channel(Nil).new(2)
+
+  def self.rate_limiter
+    wait_for = 200.milliseconds
+    loop do
+      begin
+        @@rate_limit.send(nil)
+      ensure
+        sleep wait_for
+      end
+    end
+  end
+
   @@dir_service = if App::DIR_SERVICE_ACCT
                     [PlaceOS::Client.new(
                       App::PLACE_URI,
@@ -14,6 +28,8 @@ class Staff < Application
                   end
 
   protected def resource_token
+    @@rate_limit.receive
+
     client = @@dir_service[0]
     # TODO:: expires don't grab this every request, cache until almost expired
     client.users.resource_token.token
@@ -73,3 +89,5 @@ class Staff < Application
     }.to_h.compact
   end
 end
+
+Staff.rate_limiter
