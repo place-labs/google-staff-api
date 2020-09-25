@@ -306,7 +306,9 @@ class Events < Application
     if user_token.scope.includes?("guest")
       guest_event_id, guest_system_id = user_token.user.roles
 
-      head :forbidden unless changes.extension_data && event_id == guest_event_id && query_params["system_id"]? == guest_system_id
+      sys_id_param = query_params["system_id"]?
+      changes.system_id = guest_system_id
+      head :forbidden unless changes.extension_data && event_id == guest_event_id && (sys_id_param.nil? || sys_id_param == guest_system_id)
     end
 
     placeos_client = get_placeos_client
