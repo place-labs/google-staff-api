@@ -326,11 +326,12 @@ class Events < Application
              else
                head :bad_request
              end
-    event = get_event(event_id, cal_id)
-    head(:not_found) unless event
 
     # Guests can only update the extension_data
     if user_token.scope.includes?("guest")
+      event = calendar_for.event(event_id, cal_id)
+      head(:not_found) unless event
+
       meta = EventMetadata.find("#{system_id}-#{event.id}")
       if meta.nil? && event.recurring_event_id
         if old_meta = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
@@ -357,6 +358,9 @@ class Events < Application
 
       render json: standard_event(cal_id, system, event, meta)
     end
+
+    event = get_event(event_id, cal_id)
+    head(:not_found) unless event
 
     # Does this event support changes to the recurring pattern
     recurring_master = event.recurring_event_id.nil? || event.recurring_event_id == event.id
