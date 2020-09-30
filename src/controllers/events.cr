@@ -564,7 +564,7 @@ class Events < Application
 
             attend.event_id = meta.id.not_nil!
             attend.guest_id = email
-            attend.visit_expected = true
+            attend.visit_expected = attendee.visit_expected ? true : false
             attend.save!
 
             if !previously_visiting || changing_room
