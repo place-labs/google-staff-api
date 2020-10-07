@@ -197,6 +197,31 @@ class Events < Application
         })
       end
 
+      # Save external guests into the database
+      all_attendees = event.attendees
+      if all_attendees && !all_attendees.empty?
+        internal_domain = host.split("@")[1]
+        all_attendees.each do |attendee|
+          next if !attendee.visit_expected && attendee.email.ends_with?(internal_domain)
+
+          email = attendee.email.strip.downcase
+          guest = Guest.find(email) || Guest.new
+          guest.email = email
+          guest.name ||= attendee.name
+          guest.preferred_name ||= attendee.preferred_name
+          guest.phone ||= attendee.phone
+          guest.organisation ||= attendee.organisation
+          guest.photo ||= attendee.photo
+
+          if ext_data = attendee.extension_data
+            guest_data = guest.extension_data
+            ext_data.each { |key, value| guest_data[key] = value }
+          end
+
+          guest.save!
+        end
+      end
+
       # Save custom data
       ext_data = event.extension_data
       if ext_data || (attending && !attending.empty?)
@@ -213,25 +238,6 @@ class Events < Application
         Log.info { "saving extension data for event #{gevent.id} in #{sys.id}" }
 
         if attending
-          # Create guests
-          attending.each do |attendee|
-            email = attendee.email.strip.downcase
-            guest = Guest.find(email) || Guest.new
-            guest.email = email
-            guest.name ||= attendee.name
-            guest.preferred_name ||= attendee.preferred_name
-            guest.phone ||= attendee.phone
-            guest.organisation ||= attendee.organisation
-            guest.photo ||= attendee.photo
-
-            if ext_data = attendee.extension_data
-              guest_data = guest.extension_data
-              ext_data.each { |key, value| guest_data[key] = value }
-            end
-
-            guest.save!
-          end
-
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
@@ -530,14 +536,13 @@ class Events < Application
           end
         end
 
-        attending = changes.attendees.try(&.reject { |attendee|
-          # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
-          attendee.visit_expected.nil?
-        })
+        # Save external guests into the database
+        all_attendees = changes.attendees
+        if all_attendees && !all_attendees.empty?
+          internal_domain = host.split("@")[1]
+          all_attendees.each do |attendee|
+            next if !attendee.visit_expected && attendee.email.ends_with?(internal_domain)
 
-        if attending
-          # Create guests
-          attending.each do |attendee|
             email = attendee.email.strip.downcase
             guest = Guest.find(email) || Guest.new
             guest.email = email
@@ -554,7 +559,14 @@ class Events < Application
 
             guest.save!
           end
+        end
 
+        attending = changes.attendees.try(&.reject { |attendee|
+          # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
+          attendee.visit_expected.nil?
+        })
+
+        if attending
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
