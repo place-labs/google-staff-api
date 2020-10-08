@@ -77,6 +77,8 @@ class Staff < Application
 
     if accounts = google_user.posix_accounts.try(&.select(&.primary))
       account = accounts.first?.try &.username
+    elsif custom = google_user.custom_schemas.try &.dig?("PwCGCDS", "pwcguid")
+      account = custom
     end
 
     {
