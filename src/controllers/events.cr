@@ -469,6 +469,7 @@ class Events < Application
                         summary: changes.title || event.summary,
                         description: changes.body || event.description,
                         recurrence: CalendarEvent::Recurrence.recurrence_to_google(parsed_start, changes.recurrence.not_nil!),
+                        status: changes.status.presence || event.status,
                       )
                     else
                       calendar.update(
@@ -482,6 +483,7 @@ class Events < Application
                         location: changes.location || event.location,
                         summary: changes.title || event.summary,
                         description: changes.body || event.description,
+                        status: changes.status.presence || event.status,
                       )
                     end
 
