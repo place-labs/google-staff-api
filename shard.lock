@@ -70,7 +70,7 @@ shards:
 
   neuroplastic:
     git: https://github.com/spider-gazelle/neuroplastic.git
-    version: 1.7.0
+    version: 1.7.1
 
   openssl_ext:
     git: https://github.com/stakach/openssl_ext.git
@@ -82,11 +82,11 @@ shards:
 
   placeos:
     git: https://github.com/placeos/crystal-client.git
-    version: 2.1.4+git.commit.ff5f601047b52b2c252ce7ba979e78ccda86fd00
+    version: 2.1.5+git.commit.688ee3533f450b7cf3e6a6d9f7fc078f79b589d5
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 4.4.1
+    version: 4.5.0
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
