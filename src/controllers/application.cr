@@ -93,13 +93,7 @@ abstract class Application < ActionController::Base
 
   def standard_event(calendar_id, system, event, metadata, is_parent_metadata = false)
     visitors = {} of String => Attendee
-
-    if event.status == "cancelled"
-      metadata.try &.destroy
-      metadata = nil
-    else
-      (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email] = vis }
-    end
+    (metadata.try(&.attendees) || NOP_ATTEND).each { |vis| visitors[vis.email] = vis }
 
     # Grab the list of external visitors
     attendees = (event.attendees || NOP_G_ATTEND).map do |attendee|
