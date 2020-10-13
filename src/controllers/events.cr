@@ -194,6 +194,7 @@ class Events < Application
           event_id:  gevent.id,
           host:      host,
           resource:  sys.email,
+          ext_data:  event.extension_data,
         })
       end
 
@@ -632,6 +633,7 @@ class Events < Application
           event_id:  event_id,
           host:      host,
           resource:  sys.email,
+          ext_data:  meta.try &.extension_data,
         })
       end
 
