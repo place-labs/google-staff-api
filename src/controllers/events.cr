@@ -263,6 +263,7 @@ class Events < Application
                 event_starting: event_start.to_unix,
                 attendee_name:  guest.name,
                 attendee_email: guest.email,
+                ext_data:       event.extension_data,
               })
             end
           end
@@ -599,6 +600,7 @@ class Events < Application
                   event_starting: event_start,
                   attendee_name:  guest.name,
                   attendee_email: guest.email,
+                  ext_data:       meta.try &.extension_data,
                 })
               end
             end
@@ -620,6 +622,7 @@ class Events < Application
                 event_starting: event_start,
                 attendee_name:  guest.name,
                 attendee_email: guest.email,
+                ext_data:       meta.try &.extension_data,
               })
             end
           end
@@ -845,6 +848,7 @@ class Events < Application
           event_starting: eventmeta.event_start,
           attendee_name:  guest_details.name,
           attendee_email: attendee.email,
+          ext_data:       eventmeta.extension_data,
         })
       end
 
