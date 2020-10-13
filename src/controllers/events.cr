@@ -189,12 +189,14 @@ class Events < Application
 
       spawn do
         placeos_client.root.signal("staff/event/changed", {
-          action:    :create,
-          system_id: event.system_id,
-          event_id:  gevent.id,
-          host:      host,
-          resource:  sys.email,
-          ext_data:  event.extension_data,
+          action:         :create,
+          system_id:      event.system_id,
+          event_id:       gevent.id,
+          host:           host,
+          resource:       sys.email,
+          event_summary:  event.title,
+          event_starting: event_start.to_unix,
+          ext_data:       event.extension_data,
         })
       end
 
@@ -628,12 +630,14 @@ class Events < Application
       spawn do
         sys = system.not_nil!
         placeos_client.root.signal("staff/event/changed", {
-          action:    :update,
-          system_id: sys.id,
-          event_id:  event_id,
-          host:      host,
-          resource:  sys.email,
-          ext_data:  meta.try &.extension_data,
+          action:         :update,
+          system_id:      sys.id,
+          event_id:       event_id,
+          host:           host,
+          resource:       sys.email,
+          event_summary:  updated_event.summary,
+          event_starting: event_start,
+          ext_data:       meta.try &.extension_data,
         })
       end
 
