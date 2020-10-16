@@ -63,12 +63,7 @@ describe Bookings do
     Bookings.new(ctx).index
 
     # Test the instance method of the controller
-    data = begin
-      JSON.parse(ctx.response.output.to_s)
-    rescue
-      nil
-    end
-
+    data = JSON.parse(ctx.response.output.to_s).not_nil!
     data.as_a.size.should eq(2)
 
     # filter by zones
@@ -77,12 +72,7 @@ describe Bookings do
     ctx.response.output = IO::Memory.new
     Bookings.new(ctx).index
 
-    data = begin
-      JSON.parse(ctx.response.output.to_s)
-    rescue
-      nil
-    end
-
+    data = JSON.parse(ctx.response.output.to_s).not_nil!
     data.as_a.size.should eq(1)
   end
 
@@ -105,11 +95,7 @@ describe Bookings do
     ctx.response.output = IO::Memory.new
     Bookings.new(ctx).index
 
-    data = begin
-      JSON.parse(ctx.response.output.to_s)
-    rescue
-      nil
-    end
+    data = JSON.parse(ctx.response.output.to_s).not_nil!
     data.as_a.size.should eq(1)
   end
 
@@ -127,12 +113,7 @@ describe Bookings do
 
     WebMock.stub(:post, "https://example.place.technology/api/engine/v2/signal").to_return(body: "")
 
-    created = begin
-      Booking.from_json(ctx.response.output.to_s)
-    rescue
-      nil
-    end
-
+    created = Booking.from_json(ctx.response.output.to_s).not_nil!
     created.asset_id.should eq("some_desk")
     created.booking_start.should eq(starting)
     created.booking_end.should eq(ending)
@@ -146,12 +127,7 @@ describe Bookings do
     ctx.response.output = IO::Memory.new
     Bookings.new(ctx).update
 
-    updated = begin
-      Booking.from_json(ctx.response.output.to_s)
-    rescue
-      nil
-    end
-
+    updated = Booking.from_json(ctx.response.output.to_s).not_nil!
     updated.extension_data["other"].should eq("stuff")
   end
 end

@@ -61,14 +61,14 @@ describe Guests do
     guest.attendee_for(meta.id.not_nil!)
 
     # instantiate the controller
-    ctx = context("GET", route, HEADERS)
-    ctx.response.output = IO::Memory.new
-    app = Guests.new(ctx)
+    ctx2 = context("GET", route, HEADERS)
+    ctx2.response.output = IO::Memory.new
+    app = Guests.new(ctx2)
 
     begin
       # Test the instance method of the controller
       app.index
-      ctx.response.output.to_s.should eq(
+      ctx2.response.output.to_s.should eq(
         "[{\"email\":\"bob@outside.com\",\"name\":null,\"preferred_name\":null,\"phone\":null,\"organisation\":null,\"notes\":null,\"photo\":null,\"banned\":false,\"dangerous\":false,\"extension_data\":{},\"checked_in\":false,\"visit_expected\":true}]"
       )
     ensure
