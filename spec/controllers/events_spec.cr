@@ -23,16 +23,16 @@ describe Events do
     later = 1588422097
 
     # instantiate the controller
-    response = IO::Memory.new
-    app = Events.new(context(
+    ctx = context(
       "GET",
       "/api/staff/v1/events?zone_ids=z1&period_start=#{now}&period_end=#{later}",
-      HEADERS, response_io: response
-    ))
+      HEADERS
+    )
+    ctx.response.output = IO::Memory.new
+    Events.new(ctx).index
 
     # Test the instance method of the controller
-    app.index
-    response.to_s.split("\r\n").reject(&.empty?)[-1].should start_with(
+    ctx.response.output.to_s.should start_with(
       "[{\"id\":\"123456789\",\"status\":null,\"calendar\":\"room2@example.com\",\"title\":null,\"body\":null,\"location\":null,\"host\":null,\"creator\":\"test@example.com\",\"private\":false,\"event_start\""
     )
   end
@@ -73,15 +73,15 @@ describe Events do
     result.should eq true
 
     # instantiate the controller
-    response = IO::Memory.new
-    app = Events.new(context(
+    ctx = context(
       "GET",
       "/api/staff/v1/events?zone_ids=z1&period_start=#{now}&period_end=#{later}",
-      HEADERS, response_io: response
-    ))
+      HEADERS
+    )
+    ctx.response.output = IO::Memory.new
+    Events.new(ctx).index
 
     # Test the instance method of the controller
-    app.index
-    response.to_s.includes?(%({"breakdown":15,"cleaned":false})).should eq(true)
+    ctx.response.output.to_s.includes?(%({"breakdown":15,"cleaned":false})).should eq(true)
   end
 end
