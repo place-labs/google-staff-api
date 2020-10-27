@@ -711,7 +711,7 @@ class Events < Application
 
       parent_meta = false
       metadata = EventMetadata.find("#{system_id}-#{event_id}")
-      if event.recurring_event_id && event.id != event.recurring_event_id
+      if !metadata && event.recurring_event_id && event.id != event.recurring_event_id
         metadata = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
         parent_meta = true
       end
