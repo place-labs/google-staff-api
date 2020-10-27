@@ -580,7 +580,7 @@ class Events < Application
             attend = existing_lookup[email]? || Attendee.new
             previously_visiting = attend.visit_expected
 
-            attend.event_id = meta.id.not_nil!
+            attend.event_id = meta.not_nil!.id.not_nil!
             attend.guest_id = email
             attend.visit_expected = attendee.visit_expected ? true : false
             attend.save!
