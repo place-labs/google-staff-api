@@ -24,10 +24,30 @@ class Calendars < Application
     # perform availability request
     period_start = Time.unix(query_params["period_start"].to_i64)
     period_end = Time.unix(query_params["period_end"].to_i64)
-    busy = calendar.availability(calendars, period_start, period_end)
+
+    requests = [] of HTTP::Request
+    calendars.in_groups_of(50) do |cals|
+      # in_groups_of appends nil values when less than the group size
+      requests << calendar.availability_request(cals.compact, period_start, period_end)
+    end
+
+    busy = [] of Google::Calendar::CalendarAvailability
+    calendar.batch(requests).values.each do |response|
+      busy.concat calendar.availability(response)
+    end
 
     # Remove any rooms that have overlapping bookings
-    busy.each { |status| calendars.delete(status.calendar.downcase) unless status.availability.empty? }
+    calendar_errors = 0
+    busy.each do |status|
+      if status.error || status.availability.size > 0
+        if err = status.error
+          Log.info { "error requesting availability for #{status.calendar}: #{err}" }
+          calendar_errors += 1
+        end
+        calendars.delete(status.calendar.downcase)
+      end
+    end
+    response.headers["X-Calendar-Errors"] = calendar_errors.to_s if calendar_errors > 0
 
     # Return the results
     results = calendars.map { |email|
@@ -65,10 +85,27 @@ class Calendars < Application
     # perform availability request
     period_start = Time.unix(query_params["period_start"].to_i64)
     period_end = Time.unix(query_params["period_end"].to_i64)
-    busy = calendar.availability(calendars, period_start, period_end)
+
+    requests = [] of HTTP::Request
+    calendars.in_groups_of(50) do |cals|
+      # in_groups_of appends nil values when less than the group size
+      requests << calendar.availability_request(cals.compact, period_start, period_end)
+    end
+
+    busy = [] of Google::Calendar::CalendarAvailability
+    calendar.batch(requests).values.each do |response|
+      busy.concat calendar.availability(response)
+    end
 
     # Return the results
-    results = busy.map { |details|
+    calendar_errors = 0
+    results = busy.compact_map { |details|
+      if err = details.error
+        Log.info { "error requesting availability for #{details.calendar}: #{err}" }
+        calendar_errors += 1
+        next
+      end
+
       if system = candidates[details.calendar]?
         {
           id:           details.calendar,
@@ -82,6 +119,7 @@ class Calendars < Application
         }
       end
     }
+    response.headers["X-Calendar-Errors"] = calendar_errors.to_s if calendar_errors > 0
     render json: results
   end
 
