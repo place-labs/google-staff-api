@@ -337,19 +337,23 @@ class Events < Application
                head :bad_request
              end
 
-    # Guests can only update the extension_data
-    if user_token.scope.includes?("guest")
-      event = calendar_for.event(event_id, cal_id)
-      head(:not_found) unless event
+    # If a recurring meeting then migrate metadata before making changes
+    is_guest = user_token.scope.includes?("guest")
+    event = is_guest ? calendar_for.event(event_id, cal_id) : get_event(event_id, cal_id)
+    head(:not_found) unless event
 
+    if system
       meta = EventMetadata.find("#{system_id}-#{event.id}")
       if meta.nil? && event.recurring_event_id
         if old_meta = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
-          meta = EventMetadata.new
-          meta.extension_data = old_meta.extension_data
+          EventMetadata.migrate_recurring_metadata(system.id, event, old_meta)
         end
       end
-      meta = meta || EventMetadata.new
+    end
+
+    # Guests can only update the extension_data
+    if is_guest
+      meta = meta || EventMetadata.find("#{system_id}-#{event.id}") || EventMetadata.new
 
       meta.system_id = system_id.not_nil!
       meta.event_id = event.id
@@ -368,9 +372,6 @@ class Events < Application
 
       render json: standard_event(cal_id, system, event, meta)
     end
-
-    event = get_event(event_id, cal_id)
-    head(:not_found) unless event
 
     # Does this event support changes to the recurring pattern
     recurring_master = event.recurring_event_id.nil? || event.recurring_event_id == event.id
@@ -898,6 +899,7 @@ class Events < Application
 
     # Return the full event details
     metadata = EventMetadata.find("#{system.id}-#{event_id}")
+    metadata = EventMetadata.find("#{system.id}-#{event.recurring_event_id}") if metadata.nil? && event.recurring_event_id
     render json: standard_event(cal_id, system, updated_event, metadata)
   end
 end
