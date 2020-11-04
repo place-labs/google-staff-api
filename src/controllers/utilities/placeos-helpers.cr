@@ -10,8 +10,10 @@ module Utils::PlaceOSHelpers
   # Get the list of local calendars this user has access to
   def get_user_calendars
     user = user_token.user.email
+    primary_found = false
     calendar = calendar_for(user)
-    calendar.calendar_list(Google::Access::Writer).reject { |item| item.deleted }.map do |item|
+    calendars = calendar.calendar_list(Google::Access::Writer).reject { |item| item.deleted }.map do |item|
+      primary_found = true if item.id == user
       {
         id:      item.id,
         summary: item.summary,
@@ -20,8 +22,19 @@ module Utils::PlaceOSHelpers
         # https://developers.google.com/calendar/v3/reference/calendarList#accessRole
         # https://docs.microsoft.com/en-us/graph/api/user-list-calendars?view=graph-rest-1.0&tabs=http#response-1
         can_edit: item.access_role.in?(CALENDAR_WRITABLE),
+        hidden:   item.hidden,
       }
     end
+    if !primary_found
+      calendars << {
+        id:       user,
+        summary:  user_token.user.name,
+        primary:  true,
+        can_edit: true,
+        hidden:   false,
+      }
+    end
+    calendars
   end
 
   @client : PlaceOS::Client? = nil
