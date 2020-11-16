@@ -378,15 +378,16 @@ class Events < Application
 
     # User details
     user = user_token.user.email
-    host = event.organizer.try &.email || user
+    existing_host = event.organizer.try &.email || user
+    host = changes.host || existing_host
 
     # check permisions
     existing_attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
-    unless user == host || user.in?(existing_attendees)
+    unless user == existing_host || user.in?(existing_attendees)
       # may be able to edit on behalf of the user
       head(:forbidden) unless system && !check_access(user_token.user.roles, system).none?
     end
-    calendar = calendar_for(host)
+    calendar = calendar_for(existing_host)
 
     # Check if attendees need updating
     update_attendees = !changes.attendees.nil?
@@ -466,7 +467,7 @@ class Events < Application
                         event.id,
                         event_start: parsed_start,
                         event_end: Time.unix(event_end).in(zone),
-                        calendar_id: host,
+                        calendar_id: existing_host,
                         attendees: update_attendees ? attendees : nil,
                         all_day: all_day,
                         visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
@@ -475,13 +476,17 @@ class Events < Application
                         description: changes.body || event.description,
                         recurrence: CalendarEvent::Recurrence.recurrence_to_google(parsed_start, changes.recurrence.not_nil!),
                         status: changes.status.presence || event.status,
+                        organizer: {
+                          id: host,
+                          email: host,
+                        },
                       )
                     else
                       calendar.update(
                         event.id,
                         event_start: parsed_start,
                         event_end: Time.unix(event_end).in(zone),
-                        calendar_id: host,
+                        calendar_id: existing_host,
                         attendees: update_attendees ? attendees : nil,
                         all_day: all_day,
                         visibility: priv ? Google::Visibility::Private : Google::Visibility::Default,
@@ -489,6 +494,10 @@ class Events < Application
                         summary: changes.title || event.summary,
                         description: changes.body || event.description,
                         status: changes.status.presence || event.status,
+                        organizer: {
+                          id: host,
+                          email: host,
+                        },
                       )
                     end
 
