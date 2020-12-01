@@ -18,7 +18,7 @@ shards:
 
   bindata:
     git: https://github.com/spider-gazelle/bindata.git
-    version: 1.8.0
+    version: 1.8.1
 
   connect-proxy:
     git: https://github.com/spider-gazelle/connect-proxy.git
@@ -34,7 +34,7 @@ shards:
 
   faker:
     git: https://github.com/askn/faker.git
-    version: 0.4.0
+    version: 0.4.1
 
   future:
     git: https://github.com/crystal-community/future.cr.git
@@ -82,11 +82,11 @@ shards:
 
   placeos:
     git: https://github.com/placeos/crystal-client.git
-    version: 2.1.6+git.commit.109221e807daf5e4dbe0c066d8c13ff43213461e
+    version: 2.1.7+git.commit.711ff6b8d29721fb8812d20d23acff2ed15b1709
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 4.5.3
+    version: 4.7.0
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
