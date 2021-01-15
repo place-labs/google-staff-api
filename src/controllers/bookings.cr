@@ -12,16 +12,27 @@ class Bookings < Application
     zones = Set.new((query_params["zones"]? || "").split(',').map(&.strip).reject(&.empty?)).to_a
     user_id = query_params["user"]?
     user_id = user_token.id if user_id == "current"
+    user_email = query_params["email"]?
 
     results = [] of Booking
 
     # Bookings have the requested zones
     # https://www.postgresql.org/docs/9.1/arrays.html#ARRAYS-SEARCHING
     query = String.build do |str|
-      zones.each { |_zone| str << " AND ? = ANY (zones)" }
+      if !zones.empty?
+        str << " AND ("
+        str << zones.map { |_zone| "? = ANY (zones)" }.join(" OR ")
+        str << ")"
+      end
+
       if user_id
         str << " AND user_id = ?"
         zones << user_id
+      end
+
+      if user_email
+        str << " AND user_email = ?"
+        zones << user_email
       end
     end
 
@@ -95,7 +106,7 @@ class Bookings < Application
     booking.extension_data = nil
     booking.ext_data = data.to_json
 
-    # reset the checked-in state
+    # reset the checked-in state if
     booking.checked_in = false
     booking.rejected = false
     booking.approved = false
@@ -169,7 +180,7 @@ class Bookings < Application
 
   def find_booking
     # Find will raise a 404 (not found) if there is an error
-    Booking.find!(route_params["id"])
+    Booking.find!(route_params["id"].to_i64)
   end
 
   def check_access
