@@ -11,7 +11,7 @@ class Bookings < Application
     booking_type = query_params["type"]
     zones = Set.new((query_params["zones"]? || "").split(',').map(&.strip).reject(&.empty?)).to_a
     user_id = query_params["user"]?
-    user_id = user_token.id if user_id == "current"
+    user_id = user_token.id if user_id == "current" || (user_id.nil? && zones.empty?)
     user_email = query_params["email"]?
 
     results = [] of Booking
