@@ -1,4 +1,5 @@
-# PlaceOS Staff API
+# DEPRECATED PlaceOS Google Staff API
+Instead, see https://github.com/place-labs/staff-api/
 
 ## Env Vars
 
