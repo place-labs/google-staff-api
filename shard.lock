@@ -1,12 +1,13 @@
+# NOTICE: This lockfile contains some overrides from shard.override.yml
 version: 2.0
 shards:
   CrystalEmail:
     git: https://github.com/Nephos/CrystalEmail.git
     version: 0.2.4
 
-  action-controller:
+  action-controller: # Overridden
     git: https://github.com/spider-gazelle/action-controller.git
-    version: 3.5.0
+    version: 3.5.1
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
@@ -22,7 +23,7 @@ shards:
 
   connect-proxy:
     git: https://github.com/spider-gazelle/connect-proxy.git
-    version: 1.0.0
+    version: 1.2.0
 
   cron_parser:
     git: https://github.com/kostya/cron_parser.git
@@ -30,7 +31,7 @@ shards:
 
   db:
     git: https://github.com/crystal-lang/crystal-db.git
-    version: 0.9.0
+    version: 0.10.0
 
   faker:
     git: https://github.com/askn/faker.git
@@ -45,12 +46,12 @@ shards:
     version: 3.0.0
 
   granite:
-    git: https://github.com/amberframework/granite.git
-    version: 0.21.1+git.commit.af10c182d374e62df82af83a3a55f5fbdba990a7
+    git: https://github.com/bcardiff/granite.git
+    version: 0.21.1+git.commit.72fb43da5c43147450bb87106545e411074f772f
 
   habitat:
     git: https://github.com/luckyframework/habitat.git
-    version: 0.4.4
+    version: 0.4.5
 
   http-params-serializable:
     git: https://github.com/caspiano/http-params-serializable.git
@@ -62,31 +63,31 @@ shards:
 
   jwt:
     git: https://github.com/crystal-community/jwt.git
-    version: 1.4.2
+    version: 1.5.0
 
   lucky_router:
     git: https://github.com/luckyframework/lucky_router.git
-    version: 0.4.0
+    version: 0.4.1
 
-  neuroplastic:
-    git: https://github.com/spider-gazelle/neuroplastic.git
+  neuroplastic: # Overridden
+    git: https://github.com/place-labs/neuroplastic.git
     version: 1.7.1
 
   openssl_ext:
-    git: https://github.com/stakach/openssl_ext.git
-    version: 1.2.2
+    git: https://github.com/spider-gazelle/openssl_ext.git
+    version: 2.1.0
 
   pg:
     git: https://github.com/will/crystal-pg.git
-    version: 0.21.1
+    version: 0.23.1
 
   placeos:
     git: https://github.com/placeos/crystal-client.git
-    version: 2.1.9+git.commit.643270a991498a77030be83797e1892bbd61308a
+    version: 2.2.0+git.commit.fdf12272a3b4783e7aee2482495c1af98b76aa0c
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 4.10.0
+    version: 4.12.1
 
   promise:
     git: https://github.com/spider-gazelle/promise.git
@@ -98,15 +99,15 @@ shards:
 
   rethinkdb-orm:
     git: https://github.com/spider-gazelle/rethinkdb-orm.git
-    version: 3.2.0
+    version: 3.2.1
 
-  retriable:
+  retriable: # Overridden
     git: https://github.com/Sija/retriable.cr.git
     version: 0.2.2
 
   secrets-env:
     git: https://github.com/place-labs/secrets-env.git
-    version: 1.1.0
+    version: 1.3.0
 
   tasker:
     git: https://github.com/spider-gazelle/tasker.git

@@ -55,11 +55,11 @@ class Bookings < Application
 
     existing = [] of Booking
     Booking.all(
-      "WHERE booking_start <= ? AND booking_end >= ? AND booking_type = ? AND asset_id = ?",
+      "WHERE booking_start <= ? AND booking_end >= ? AND booking_type = ? AND asset_id = ? AND rejected = FALSE",
       [ending, starting, booking_type, asset_id]
     ).each { |b| existing << b }
 
-    head(:conflict) unless existing.empty?
+    render(:conflict, json: existing.first) unless existing.empty?
 
     # Add the user details
     user = user_token.user
