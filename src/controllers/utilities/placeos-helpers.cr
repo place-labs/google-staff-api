@@ -77,6 +77,7 @@ module Utils::PlaceOSHelpers
       Promise.all(zones.map { |zone_id|
         Promise.defer {
           client.search(
+            limit: 10_000,
             zone_id: zone_id,
             features: args.features,
             capacity: args.capacity,

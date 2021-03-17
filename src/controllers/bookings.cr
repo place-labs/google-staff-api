@@ -130,7 +130,7 @@ class Bookings < Application
     # Don't clash with self
     existing = existing.reject { |b| b.id == booking.id }
 
-    head(:conflict) unless existing.empty?
+    render(:conflict, json: existing.first) unless existing.empty?
 
     update_booking(booking)
   end

@@ -30,7 +30,7 @@ module Utils::CurrentUser
 
     # Token and authority domains must match
     token_domain_host = URI.parse(user_token.domain).host.to_s
-    authority_domain_host = URI.parse(request.host.as(String)).host.to_s
+    authority_domain_host = URI.parse(request.hostname.as(String)).host.to_s
     unless token_domain_host == authority_domain_host
       ::Log.with_context do
         Log.context.set({token: token_domain_host, authority: authority_domain_host})

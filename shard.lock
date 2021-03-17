@@ -15,7 +15,7 @@ shards:
 
   ameba:
     git: https://github.com/veelenga/ameba.git
-    version: 0.13.4
+    version: 0.14.1
 
   bindata:
     git: https://github.com/spider-gazelle/bindata.git
@@ -51,7 +51,7 @@ shards:
 
   habitat:
     git: https://github.com/luckyframework/habitat.git
-    version: 0.4.5
+    version: 0.4.6
 
   http-params-serializable:
     git: https://github.com/caspiano/http-params-serializable.git
@@ -75,7 +75,7 @@ shards:
 
   openssl_ext:
     git: https://github.com/spider-gazelle/openssl_ext.git
-    version: 2.1.0
+    version: 2.1.1
 
   pg:
     git: https://github.com/will/crystal-pg.git
@@ -99,11 +99,11 @@ shards:
 
   rethinkdb-orm:
     git: https://github.com/spider-gazelle/rethinkdb-orm.git
-    version: 3.2.1
+    version: 3.2.2
 
   retriable: # Overridden
     git: https://github.com/Sija/retriable.cr.git
-    version: 0.2.2
+    version: 0.2.3
 
   secrets-env:
     git: https://github.com/place-labs/secrets-env.git
