@@ -847,6 +847,7 @@ class Events < Application
           resource:       eventmeta.resource_calendar,
           event_summary:  event.not_nil!.summary,
           event_starting: eventmeta.event_start,
+          event_ending:   eventmeta.event_end,
           attendee_name:  guest_details.name,
           attendee_email: attendee.email,
           ext_data:       eventmeta.extension_data,
