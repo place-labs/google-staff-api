@@ -134,7 +134,7 @@ class Guests < Application
     changes = Guest.from_json(request.body.as(IO))
     {% for key in [:name, :preferred_name, :phone, :organisation, :notes, :photo, :banned, :dangerous] %}
       begin
-        guest.{{key.id}} = changes.{{key.id}}
+        guest.{{key.id}} = changes.{{key.id}} unless changes.{{key.id}}.nil?
       rescue NilAssertionError
       end
     {% end %}
