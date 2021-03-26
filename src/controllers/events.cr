@@ -569,7 +569,7 @@ class Events < Application
         end
 
         # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
-        if attending = changes.attendees.try(&.reject(&.visit_expected.nil?)
+        if attending = changes.attendees.try(&.reject(&.visit_expected.nil?))
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
