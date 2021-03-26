@@ -568,19 +568,16 @@ class Events < Application
           end
         end
 
-        attending = changes.attendees.try(&.reject { |attendee|
-          # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
-          attendee.visit_expected.nil?
-        })
-
-        if attending
+        # rejecting nil as we want to mark them as not attending where they might have otherwise been attending
+        if attending = changes.attendees.try(&.reject(&.visit_expected.nil?)
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
 
-            attend = existing_lookup[email]? || Attendee.new
-            previously_visiting = attend.visit_expected
+            was_attending = existing_lookup[email]?
+            previously_visiting = was_attending.try &.visit_expected
 
+            attend = was_attending || Attendee.new
             attend.event_id = meta.not_nil!.id.not_nil!
             attend.guest_id = email
             attend.visit_expected = attendee.visit_expected ? true : false
