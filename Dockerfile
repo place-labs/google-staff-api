@@ -35,7 +35,7 @@ RUN PLACE_COMMIT=$PLACE_COMMIT \
     crystal build --release --error-trace src/staff-api.cr -o staff-api
 
 # Extract dependencies
-RUN ldd bin/app | tr -s '[:blank:]' '\n' | grep '^/' | \
+RUN ldd staff-api | tr -s '[:blank:]' '\n' | grep '^/' | \
     xargs -I % sh -c 'mkdir -p $(dirname deps%); cp % deps%;'
 
 # Build a minimal docker image
@@ -43,7 +43,7 @@ FROM scratch
 WORKDIR /
 ENV PATH=$PATH:/
 COPY --from=0 /src/deps /
-COPY --from=0 /src/bin/app /app
+COPY --from=0 /src/staff-api /app
 COPY --from=0 /etc/hosts /etc/hosts
 
 # These provide certificate chain validation where communicating with external services over TLS
