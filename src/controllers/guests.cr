@@ -118,7 +118,7 @@ class Guests < Application
 
   def show
     if user_token.scope.includes?("guest")
-      head :forbidden unless guest.id == user_token.sub
+      head :forbidden unless guest.id == user_token.id
     end
 
     # find out if they are attending today
@@ -128,7 +128,7 @@ class Guests < Application
 
   def update
     if user_token.scope.includes?("guest")
-      head :forbidden unless guest.id == user_token.sub
+      head :forbidden unless guest.id == user_token.id
     end
 
     changes = Guest.from_json(request.body.as(IO))
