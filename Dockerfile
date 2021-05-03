@@ -29,8 +29,10 @@ RUN adduser \
     "${USER}"
 
 # Build App
+RUN shards install --production --ignore-crystal-version
+# Build App
 RUN PLACE_COMMIT=$PLACE_COMMIT \
-    shards build --error-trace --production
+    crystal build --release --error-trace src/staff-api.cr -o staff-api
 
 # Extract dependencies
 RUN ldd bin/app | tr -s '[:blank:]' '\n' | grep '^/' | \
