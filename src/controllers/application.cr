@@ -137,6 +137,13 @@ abstract class Application < ActionController::Base
 
     # TODO:: location
 
+    # Print some debug for all day events
+    if !!event.start.date
+      logger.warn {
+        "PRESENTING DAY EVENT: #{event.summary}\n  * timezone: #{event.start.time_zone}\n  * has datetime? #{event.start.date_time}\n  * has date only #{event.start.date}"
+      }
+    end
+
     {
       id:             event.id,
       status:         event.status,
