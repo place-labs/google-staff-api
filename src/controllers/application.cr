@@ -149,7 +149,7 @@ abstract class Application < ActionController::Base
       private:        event.visibility.in?({"private", "confidential"}),
       event_start:    event_start,
       event_end:      event_end,
-      timezone:       event.start.time_zone,
+      timezone:       event.timezone || event.start.time_zone,
       all_day:        !!event.start.date,
       attendees:      attendees,
       system:         system,
