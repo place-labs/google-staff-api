@@ -17,7 +17,7 @@ require "action-controller/server"
 
 # Configure logging
 Log.builder.bind "*", :warn, App::LOG_BACKEND
-Log.builder.bind "google.*", :debug, App::LOG_BACKEND
+Log.builder.bind "google.*", :info, App::LOG_BACKEND
 Log.builder.bind "action-controller.*", :info, App::LOG_BACKEND
 Log.builder.bind "#{App::NAME}.*", :info, App::LOG_BACKEND
 

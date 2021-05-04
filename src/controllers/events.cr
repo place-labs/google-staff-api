@@ -157,10 +157,6 @@ class Events < Application
     event_start = Time.unix(event.event_start).in zone
     event_end = Time.unix(event.event_end).in zone
 
-    Log.warn {
-      "\n\nCREATING EVENT IN ZONE: #{event_start.location.name}\n\n"
-    }
-
     gevent = calendar.create(
       event_start: event_start,
       event_end: event_end,

@@ -73,6 +73,8 @@ logging = Proc(Signal, Nil).new do |signal|
   level = signal.usr1? ? Log::Severity::Debug : Log::Severity::Info
   puts " > Log level changed to #{level}"
   Log.builder.bind "#{App::NAME}.*", level, App::LOG_BACKEND
+  Log.builder.bind "google.*", level, App::LOG_BACKEND
+  Log.builder.bind "action-controller.*", level, App::LOG_BACKEND
   signal.ignore
 end
 
