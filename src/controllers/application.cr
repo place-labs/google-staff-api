@@ -118,8 +118,8 @@ abstract class Application < ActionController::Base
       end
     end
 
-    event_start = (event.start.date_time || event.start.date).not_nil!.to_unix
-    event_end = event.end.try { |time| (time.date_time || time.date).try &.to_unix }
+    event_start = event.start.time.to_unix
+    event_end = event.end.try { |time| time.time.to_unix }
 
     # Ensure metadata is in sync
     if metadata && (event_start != metadata.event_start || (event_end && event_end != metadata.event_end))
@@ -149,7 +149,7 @@ abstract class Application < ActionController::Base
       private:        event.visibility.in?({"private", "confidential"}),
       event_start:    event_start,
       event_end:      event_end,
-      timezone:       event.timezone || event.start.time_zone,
+      timezone:       event.start.time.location.try &.name,
       all_day:        !!event.start.date,
       attendees:      attendees,
       system:         system,
