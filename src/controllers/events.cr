@@ -150,7 +150,9 @@ class Events < Application
     zone = if tz = event.timezone
              Time::Location.load(tz)
            else
-             get_timezone
+             loc = get_timezone
+             event.timezone = loc.name
+             loc
            end
     event_start = Time.unix(event.event_start).in zone
     event_end = Time.unix(event.event_end).in zone
