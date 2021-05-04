@@ -402,7 +402,7 @@ class Events < Application
 
     zone = if tz = changes.timezone
              Time::Location.load(tz)
-           elsif event_tz = event.start.time_zone
+           elsif event_tz = event.start.time.location.try &.name
              Time::Location.load(event_tz)
            else
              get_timezone
