@@ -148,7 +148,14 @@ class Events < Application
     }
 
     zone = if tz = event.timezone
-             Time::Location.load(tz)
+             begin
+               Time::Location.load(tz)
+             rescue error
+               Log.warn(exception: error) { "failed to load specified timezone" }
+               loc = get_timezone
+               event.timezone = loc.name
+               loc
+             end
            else
              loc = get_timezone
              event.timezone = loc.name
@@ -401,11 +408,14 @@ class Events < Application
     remove_attendees = existing_attendees - attendees
 
     zone = if tz = changes.timezone
-             Time::Location.load(tz)
-           elsif event_tz = event.start.time.location.try &.name
-             Time::Location.load(event_tz)
+             begin
+               Time::Location.load(tz)
+             rescue error
+               Log.warn(exception: error) { "failed to load specified timezone" }
+               event.start.time.location || get_timezone
+             end
            else
-             get_timezone
+             event.start.time.location || get_timezone
            end
 
     event_start = changes.event_start

@@ -135,6 +135,12 @@ abstract class Application < ActionController::Base
                    CalendarEvent::Recurrence.recurrence_from_google(recur, event)
                  end
 
+    timezone = if (loc = event.start.time.location) && !loc.fixed?
+      loc.name
+    else
+      nil
+    end
+
     {
       id:             event.id,
       status:         event.status,
@@ -147,7 +153,7 @@ abstract class Application < ActionController::Base
       private:        event.visibility.in?({"private", "confidential"}),
       event_start:    event_start,
       event_end:      event_end,
-      timezone:       event.start.time.location.try &.name,
+      timezone:       timezone,
       all_day:        !!event.start.date,
       attendees:      attendees,
       system:         system,
