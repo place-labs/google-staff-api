@@ -808,7 +808,7 @@ class Events < Application
     checkin = (query_params["state"]? || "true") == "true"
 
     event_id = route_params["id"]
-    guest_email = route_params["guest_id"].downcase
+    guest_email = URI.decode(route_params["guest_id"]).downcase
 
     is_guest_scope = user_token.scope.includes?("guest")
     if is_guest_scope
