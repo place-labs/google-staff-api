@@ -70,7 +70,7 @@ abstract class Application < ActionController::Base
                     {{key.id}}: guest.{{key.id}},
                   {% end %}
                   checked_in:     parent_meta ? false : visitor.try(&.checked_in) || false,
-                  visit_expected: visitor.try(&.visit_expected).nil? ? true : visitor.try(&.visit_expected),
+                  visit_expected: visitor.try(&.visit_expected) || false,
                 }
                {% end %}
              elsif visitor
