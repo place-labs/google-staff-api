@@ -14,8 +14,7 @@ dependencies:
 
   # Master as was otherwise having an issue installing the latest shard
   granite:
-    github: bcardiff/granite
-    branch: crystal/0.36.0
+    github: amberframework/granite
 
   pg:
     github: will/crystal-pg
@@ -45,7 +44,6 @@ development_dependencies:
     github: veelenga/ameba
   webmock:
     github: manastech/webmock.cr
-    version: 0.13.0 # remove once 0.36.0 released
   faker:
     github: askn/faker
 
