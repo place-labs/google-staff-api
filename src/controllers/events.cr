@@ -192,9 +192,8 @@ class Events < Application
     if system
       sys = system.not_nil!
       # Grab the list of externals that might be attending
-      attending = event.attendees.try(&.select { |attendee|
-        attendee.visit_expected
-      })
+      attending = [] of Events::GuestDetails
+      attending = event.attendees.not_nil!.select { |attendee| attendee.visit_expected } if event.attendees
 
       spawn do
         placeos_client.root.signal("staff/event/changed", {
@@ -211,10 +210,11 @@ class Events < Application
 
       # Save external guests into the database
       all_attendees = event.attendees
+      internal_domain = host.split("@")[1] || "unknown_domain"
       if all_attendees && !all_attendees.empty?
-        internal_domain = host.split("@")[1]
         all_attendees.each do |attendee|
-          next if !attendee.visit_expected && attendee.email.ends_with?(internal_domain)
+          next if !attendee.visit_expected
+          next if attendee.email.ends_with?(internal_domain)
 
           email = attendee.email.strip.downcase
           guest = Guest.find(email) || Guest.new
@@ -236,7 +236,8 @@ class Events < Application
 
       # Save custom data
       ext_data = event.extension_data
-      if ext_data || (attending && !attending.empty?)
+      external_onsite_visitors = attending.select { |a| a.email.ends_with?(internal_domain) }
+      if ext_data || (external_onsite_visitors && !external_onsite_visitors.empty?)
         meta = EventMetadata.new
         meta.system_id = sys.id.not_nil!
         meta.event_id = gevent.id
@@ -249,9 +250,9 @@ class Events < Application
 
         Log.info { "saving extension data for event #{gevent.id} in #{sys.id}" }
 
-        if attending
+        if external_onsite_visitors
           # Create attendees
-          attending.each do |attendee|
+          external_onsite_visitors.each do |attendee|
             email = attendee.email.strip.downcase
             attend = Attendee.new
             attend.event_id = meta.id.not_nil!
