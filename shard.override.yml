@@ -6,3 +6,6 @@ dependencies:
     github: place-labs/neuroplastic
   retriable:
     github: Sija/retriable.cr
+  http-params-serializable:
+    github: place-labs/http-params-serializable
+    branch: chore/0.36.0
