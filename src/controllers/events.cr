@@ -236,7 +236,7 @@ class Events < Application
 
       # Save custom data
       ext_data = event.extension_data
-      external_onsite_visitors = attending.select { |a| a.email.ends_with?(internal_domain) }
+      external_onsite_visitors = attending.select { |a| !a.email.ends_with?(internal_domain) }
       if ext_data || (external_onsite_visitors && !external_onsite_visitors.empty?)
         meta = EventMetadata.new
         meta.system_id = sys.id.not_nil!
