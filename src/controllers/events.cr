@@ -559,9 +559,9 @@ class Events < Application
         # Save external guests into the database
         all_attendees = changes.attendees
         if all_attendees && !all_attendees.empty?
-          internal_domain = host.split("@")[1]
+          internal_domain = host.split("@")[1] || "unknown_domain"
           all_attendees.each do |attendee|
-            next if !attendee.visit_expected && attendee.email.ends_with?(internal_domain)
+            next if !attendee.visit_expected || attendee.email.ends_with?(internal_domain)
 
             email = attendee.email.strip.downcase
             guest = Guest.find(email) || Guest.new
@@ -586,6 +586,7 @@ class Events < Application
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
+            next if email.ends_with?(internal_domain.not_nil!)
 
             was_attending = existing_lookup[email]?
             previously_visiting = was_attending.try &.visit_expected
@@ -619,6 +620,7 @@ class Events < Application
         elsif changing_room
           existing.each do |attend|
             next unless attend.visit_expected
+            next if attend.email.ends_with?(internal_domain.not_nil!)
             spawn do
               sys = system.not_nil!
               guest = attend.guest
