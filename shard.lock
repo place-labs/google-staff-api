@@ -49,9 +49,9 @@ shards:
     git: https://github.com/luckyframework/habitat.git
     version: 0.4.7
 
-  http-params-serializable:
+  http-params-serializable: # Overridden
     git: https://github.com/place-labs/http-params-serializable.git
-    version: 0.5.0
+    version: 0.4.1+git.commit.c87119117af3d2db11af22ad799ccf77072e6a8b
 
   json_mapping:
     git: https://github.com/crystal-lang/json_mapping.cr.git
