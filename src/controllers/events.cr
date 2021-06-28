@@ -586,6 +586,7 @@ class Events < Application
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
+            next unless attendee.visit_expected
             next if email.ends_with?(internal_domain.not_nil!)
 
             was_attending = existing_lookup[email]?
