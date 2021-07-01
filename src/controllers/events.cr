@@ -84,7 +84,14 @@ class Events < Application
     property extension_data : Hash(String, JSON::Any)? = nil
 
     property visit_expected : Bool? = nil
+    property assistance_required : Bool? = nil
     property resource : Bool? = nil
+    property required : Bool? = true
+
+    def required : Bool
+      req = @required
+      req.nil? ? true : req
+    end
   end
 
   class CreateCalEvent
@@ -144,11 +151,12 @@ class Events < Application
       {
         :email       => email,
         :displayName => a.name || email,
+        :optional    => !a.required,
       }
     end
 
     # The host is automatically accepted
-    attendees << {
+    attendees << Hash(Symbol, Bool | String){
       :email          => host,
       :displayName    => host_details.try &.name || host,
       :responseStatus => "accepted",
@@ -231,6 +239,7 @@ class Events < Application
           guest.phone ||= attendee.phone
           guest.organisation ||= attendee.organisation
           guest.photo ||= attendee.photo
+          guest.assistance_required ||= !!attendee.assistance_required
 
           if ext_data = attendee.extension_data
             guest_data = guest.extension_data
@@ -481,9 +490,12 @@ class Events < Application
             :comment          => existing.comment,
           }
         else
+          new_attendee = new_lookup[email]?
+          required = new_attendee ? new_attendee.required : true
           {
             :email       => email,
-            :displayName => new_lookup[email]?.try(&.name) || email,
+            :displayName => new_attendee.try(&.name) || email,
+            :optional    => !required,
           }
         end
       end
@@ -587,6 +599,7 @@ class Events < Application
             guest.phone ||= attendee.phone
             guest.organisation ||= attendee.organisation
             guest.photo ||= attendee.photo
+            guest.assistance_required ||= !!attendee.assistance_required
 
             if ext_data = attendee.extension_data
               guest_data = guest.extension_data

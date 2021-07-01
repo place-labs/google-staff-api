@@ -28,6 +28,7 @@ class Guest < Granite::Base
   column dangerous : Bool = false
   column searchable : String
   column ext_data : String?
+  column assistance_required : Bool = false
 
   property extension_data : Hash(String, JSON::Any)?
 

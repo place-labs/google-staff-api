@@ -100,12 +100,14 @@ abstract class Application < ActionController::Base
       email = attendee.email.downcase
       if visitor = visitors[email]?
         {
-          name:            attendee.display_name || visitor.guest.preferred_name || visitor.guest.name || email,
-          email:           email,
-          response_status: attendee.response_status,
-          checked_in:      is_parent_metadata ? false : visitor.checked_in,
-          visit_expected:  visitor.visit_expected,
-          resource:        attendee.resource,
+          name:                attendee.display_name || visitor.guest.preferred_name || visitor.guest.name || email,
+          email:               email,
+          response_status:     attendee.response_status,
+          checked_in:          is_parent_metadata ? false : visitor.checked_in,
+          visit_expected:      visitor.visit_expected,
+          resource:            attendee.resource,
+          required:            !attendee.optional,
+          assistance_required: visitor.guest.assistance_required,
         }
       else
         {
@@ -114,6 +116,7 @@ abstract class Application < ActionController::Base
           response_status: attendee.response_status,
           organizer:       attendee.organizer,
           resource:        attendee.resource,
+          required:        !attendee.optional,
         }
       end
     end
@@ -136,10 +139,10 @@ abstract class Application < ActionController::Base
                  end
 
     timezone = if (loc = event.start.time.location) && !loc.fixed?
-      loc.name
-    else
-      nil
-    end
+                 loc.name
+               else
+                 nil
+               end
 
     {
       id:             event.id,
