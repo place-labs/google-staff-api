@@ -100,7 +100,7 @@ abstract class Application < ActionController::Base
       email = attendee.email.downcase
       if visitor = visitors[email]?
         {
-          name:            attendee.display_name || email,
+          name:            attendee.display_name || visitor.guest.preferred_name || visitor.guest.name || email,
           email:           email,
           response_status: attendee.response_status,
           checked_in:      is_parent_metadata ? false : visitor.checked_in,

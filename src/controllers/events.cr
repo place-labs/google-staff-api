@@ -72,16 +72,19 @@ class Events < Application
   class GuestDetails
     include JSON::Serializable
 
-    property email : String
-    property name : String?
-    property preferred_name : String?
-    property phone : String?
-    property organisation : String?
-    property photo : String?
-    property extension_data : Hash(String, JSON::Any)?
+    def initialize(@email, @name)
+    end
 
-    property visit_expected : Bool?
-    property resource : Bool?
+    property email : String
+    property name : String? = nil
+    property preferred_name : String? = nil
+    property phone : String? = nil
+    property organisation : String? = nil
+    property photo : String? = nil
+    property extension_data : Hash(String, JSON::Any)? = nil
+
+    property visit_expected : Bool? = nil
+    property resource : Bool? = nil
   end
 
   class CreateCalEvent
@@ -125,25 +128,29 @@ class Events < Application
     host = event.host || user
     calendar = calendar_for(user)
 
-    attendees = event.attendees.try(&.map { |a| a.email }) || [] of String
+    attendees = event.attendees.try(&.to_h { |a| {a.email, a} }) || {} of String => GuestDetails
     placeos_client = get_placeos_client
 
     system_id = event.system_id || event.system.try(&.id)
     if system_id
       system = placeos_client.systems.fetch(system_id)
-      attendees << system.email.presence.not_nil!
+      sys_email = system.email.presence.not_nil!
+      attendees[sys_email] = GuestDetails.new(sys_email, system.display_name || system.name)
     end
 
     # Ensure the host is configured to be attending the meeting and has accepted the meeting
-    attendees = attendees.uniq.reject { |email| email == host }.map do |email|
-      # hash = Hash(Symbol, String | Bool).new
-      # hash[:email] = email
-      # hash
-      {:email => email}
+    host_details = attendees.delete(host)
+    attendees = attendees.map do |email, a|
+      {
+        :email       => email,
+        :displayName => a.name || email,
+      }
     end
 
+    # The host is automatically accepted
     attendees << {
       :email          => host,
+      :displayName    => host_details.try &.name || host,
       :responseStatus => "accepted",
     }
 
@@ -456,6 +463,12 @@ class Events < Application
     if update_attendees
       existing_lookup = {} of String => ::Google::Calendar::Attendee
       (event.attendees || [] of ::Google::Calendar::Attendee).each { |a| existing_lookup[a.email] = a }
+
+      new_lookup = changes.attendees.try(&.to_h { |a| {a.email, a} }) || {} of String => GuestDetails
+      if cal_id && system
+        new_lookup[cal_id] = GuestDetails.new(cal_id, system.display_name || system.name)
+      end
+
       attendees = attendees.map do |email|
         if existing = existing_lookup[email]?
           {
@@ -467,7 +480,10 @@ class Events < Application
             :comment          => existing.comment,
           }
         else
-          {:email => email}
+          {
+            :email       => email,
+            :displayName => new_lookup[email]?.try(&.name) || email,
+          }
         end
       end
     end
