@@ -99,12 +99,14 @@ class Guest < Granite::Base
     morning = now.at_beginning_of_day.to_unix
     tonight = now.at_end_of_day.to_unix
 
-    Attendee.all(
+    attending = Attendee.all(
       %(WHERE guest_id = ? AND event_id IN (
         SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?
         )
       LIMIT 1
       ), [self.id, tonight, morning]
-    ).map { |a| a }.first?
+    ).map { |a| a }
+
+    attending.select { |a| a.checked_in }.first? || attending.first?
   end
 end
