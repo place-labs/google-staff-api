@@ -37,6 +37,7 @@ dependencies:
   # TODO:: remove in future
   http-params-serializable:
     github: place-labs/http-params-serializable
+    branch: chore/0.36.0
 
 development_dependencies:
   ameba:
