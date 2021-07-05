@@ -84,7 +84,7 @@ class Events < Application
     property extension_data : Hash(String, JSON::Any)? = nil
 
     property visit_expected : Bool? = nil
-    property assistance_required : Bool? = nil
+    # property assistance_required : Bool? = nil
     property resource : Bool? = nil
     property required : Bool? = true
 
@@ -239,7 +239,7 @@ class Events < Application
           guest.phone ||= attendee.phone
           guest.organisation ||= attendee.organisation
           guest.photo ||= attendee.photo
-          guest.assistance_required ||= !!attendee.assistance_required
+          # guest.assistance_required ||= !!attendee.assistance_required
 
           if ext_data = attendee.extension_data
             guest_data = guest.extension_data
@@ -599,7 +599,7 @@ class Events < Application
             guest.phone ||= attendee.phone
             guest.organisation ||= attendee.organisation
             guest.photo ||= attendee.photo
-            guest.assistance_required ||= !!attendee.assistance_required
+            # guest.assistance_required ||= !!attendee.assistance_required
 
             if ext_data = attendee.extension_data
               guest_data = guest.extension_data

@@ -107,7 +107,7 @@ abstract class Application < ActionController::Base
           visit_expected:      visitor.visit_expected,
           resource:            attendee.resource,
           required:            !attendee.optional,
-          assistance_required: visitor.guest.assistance_required,
+          # assistance_required: visitor.guest.assistance_required,
         }
       else
         {
