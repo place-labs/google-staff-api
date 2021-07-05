@@ -55,25 +55,24 @@ describe Bookings do
 
   it "should return a list of bookings" do
     # instantiate the controller
-    response = IO::Memory.new
-
     starting = 5.minutes.from_now.to_unix
     ending = 40.minutes.from_now.to_unix
     route = "/api/staff/v1/bookings?period_start=#{starting}&period_end=#{ending}&type=desk"
-    app = Bookings.new(context("GET", route, HEADERS, response_io: response))
+    ctx = context("GET", route, HEADERS)
+    ctx.response.output = IO::Memory.new
+    Bookings.new(ctx).index
 
     # Test the instance method of the controller
-    app.index
-    data = response.to_s
-    data = JSON.parse(data.split("\r\n").reject(&.empty?)[-1])
+    data = JSON.parse(ctx.response.output.to_s).not_nil!
     data.as_a.size.should eq(2)
 
     # filter by zones
-    response = IO::Memory.new
     route = "/api/staff/v1/bookings?period_start=#{starting}&period_end=#{ending}&type=desk&zones=zone-890,zone-4127"
-    Bookings.new(context("GET", route, HEADERS, response_io: response)).index
+    ctx = context("GET", route, HEADERS)
+    ctx.response.output = IO::Memory.new
+    Bookings.new(ctx).index
 
-    data = JSON.parse(response.to_s.split("\r\n").reject(&.empty?)[-1])
+    data = JSON.parse(ctx.response.output.to_s).not_nil!
     data.as_a.size.should eq(1)
   end
 
@@ -89,13 +88,14 @@ describe Bookings do
     app.destroy
 
     # Check only one is returned
-    response = IO::Memory.new
     starting = 5.minutes.from_now.to_unix
     ending = 40.minutes.from_now.to_unix
     route = "/api/staff/v1/bookings?period_start=#{starting}&period_end=#{ending}&type=desk"
-    Bookings.new(context("GET", route, HEADERS, response_io: response)).index
+    ctx = context("GET", route, HEADERS)
+    ctx.response.output = IO::Memory.new
+    Bookings.new(ctx).index
 
-    data = JSON.parse(response.to_s.split("\r\n").reject(&.empty?)[-1])
+    data = JSON.parse(ctx.response.output.to_s).not_nil!
     data.as_a.size.should eq(1)
   end
 
@@ -107,15 +107,13 @@ describe Bookings do
     body = IO::Memory.new
     body << %({"asset_id":"some_desk","booking_start":#{starting},"booking_end":#{ending},"booking_type":"desk"})
     body.rewind
-    response = IO::Memory.new
-    context = context("POST", "/api/staff/v1/bookings/", HEADERS, body, response_io: response)
-    app = Bookings.new(context)
-    app.create
+    ctx = context("POST", "/api/staff/v1/bookings/", HEADERS, body)
+    ctx.response.output = IO::Memory.new
+    Bookings.new(ctx).create
 
     WebMock.stub(:post, "https://example.place.technology/api/engine/v2/signal").to_return(body: "")
 
-    data = response.to_s.split("\r\n").reject(&.empty?)[-1]
-    created = Booking.from_json(data)
+    created = Booking.from_json(ctx.response.output.to_s).not_nil!
     created.asset_id.should eq("some_desk")
     created.booking_start.should eq(starting)
     created.booking_end.should eq(ending)
@@ -124,13 +122,12 @@ describe Bookings do
     body = IO::Memory.new
     body << %({"extension_data":{"other":"stuff"}})
     body.rewind
-    response = IO::Memory.new
-    context = context("PATCH", "/api/staff/v1/bookings/#{created.id}", HEADERS, body, response_io: response)
-    context.route_params = {"id" => created.id.to_s}
-    app = Bookings.new(context)
-    app.update
+    ctx = context("PATCH", "/api/staff/v1/bookings/#{created.id}", HEADERS, body)
+    ctx.route_params = {"id" => created.id.to_s}
+    ctx.response.output = IO::Memory.new
+    Bookings.new(ctx).update
 
-    updated = Booking.from_json(response.to_s.split("\r\n").reject(&.empty?)[-1])
+    updated = Booking.from_json(ctx.response.output.to_s).not_nil!
     updated.extension_data["other"].should eq("stuff")
   end
 end
