@@ -107,6 +107,10 @@ class Guest < Granite::Base
       ), [self.id, tonight, morning]
     ).map { |a| a }
 
-    attending.select { |a| a.checked_in }.first? || attending.first?
+    if attendee = attending.select(&.checked_in).first?
+      attendee
+    else
+      attending.first?
+    end
   end
 end
