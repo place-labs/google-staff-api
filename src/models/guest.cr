@@ -101,16 +101,11 @@ class Guest < Granite::Base
 
     attending = Attendee.all(
       %(WHERE guest_id = ? AND event_id IN (
-        SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?
+          SELECT id FROM metadata WHERE event_start <= ? AND event_end >= ?
         )
-      LIMIT 1
       ), [self.id, tonight, morning]
     ).map { |a| a }
 
-    if attendee = attending.select(&.checked_in).first?
-      attendee
-    else
-      attending.first?
-    end
+    attending.select { |a| a.checked_in }.first? || attending.first?
   end
 end
