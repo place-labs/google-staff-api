@@ -138,11 +138,15 @@ class Events < Application
     attendees = event.attendees.try(&.to_h { |a| {a.email, a} }) || {} of String => GuestDetails
     placeos_client = get_placeos_client
 
+    # Add the room to the list of attendees
     system_id = event.system_id || event.system.try(&.id)
     if system_id
       system = placeos_client.systems.fetch(system_id)
       sys_email = system.email.presence.not_nil!
-      attendees[sys_email] = GuestDetails.new(sys_email, system.display_name || system.name)
+      # Exclude the placeos system.name so that Google will automatically use the room mailbox name.
+      room_mailbox = GuestDetails.new(sys_email, nil)  
+      room_mailbox.resource = true
+      attendees[sys_email] = room_mailbox 
     end
 
     # Ensure the host is configured to be attending the meeting and has accepted the meeting
