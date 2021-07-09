@@ -478,7 +478,7 @@ class Events < Application
       if cal_id && system
         room_mailbox = GuestDetails.new(cal_id, nil)
         room_mailbox.resource = true
-        attendees[cal_id] = room_mailbox
+        new_lookup[cal_id] = room_mailbox
       end
 
       attendees = attendees.map do |email|
