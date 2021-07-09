@@ -476,7 +476,9 @@ class Events < Application
 
       new_lookup = changes.attendees.try(&.to_h { |a| {a.email, a} }) || {} of String => GuestDetails
       if cal_id && system
-        new_lookup[cal_id] = GuestDetails.new(cal_id, system.display_name || system.name)
+        room_mailbox = GuestDetails.new(cal_id, nil)
+        room_mailbox.resource = true
+        attendees[cal_id] = room_mailbox
       end
 
       attendees = attendees.map do |email|
