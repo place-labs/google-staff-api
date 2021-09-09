@@ -144,9 +144,9 @@ class Events < Application
       system = placeos_client.systems.fetch(system_id)
       sys_email = system.email.presence.not_nil!
       # Exclude the placeos system.name so that Google will automatically use the room mailbox name.
-      room_mailbox = GuestDetails.new(sys_email, nil)  
+      room_mailbox = GuestDetails.new(sys_email, nil)
       room_mailbox.resource = true
-      attendees[sys_email] = room_mailbox 
+      attendees[sys_email] = room_mailbox
     end
 
     # Ensure the host is configured to be attending the meeting and has accepted the meeting
@@ -227,37 +227,9 @@ class Events < Application
         })
       end
 
-      # Save external guests into the database
-      all_attendees = event.attendees
-      internal_domain = host.split("@")[1] || "unknown_domain"
-      if all_attendees && !all_attendees.empty?
-        all_attendees.each do |attendee|
-          next if !attendee.visit_expected
-          next if attendee.email.ends_with?(internal_domain)
-
-          email = attendee.email.strip.downcase
-          guest = Guest.find(email) || Guest.new
-          guest.email = email
-          guest.name ||= attendee.name
-          guest.preferred_name ||= attendee.preferred_name
-          guest.phone ||= attendee.phone
-          guest.organisation ||= attendee.organisation
-          guest.photo ||= attendee.photo
-          # guest.assistance_required ||= !!attendee.assistance_required
-
-          if ext_data = attendee.extension_data
-            guest_data = guest.extension_data
-            ext_data.each { |key, value| guest_data[key] = value }
-          end
-
-          guest.save!
-        end
-      end
-
       # Save custom data
       ext_data = event.extension_data
-      external_onsite_visitors = attending.select { |a| !a.email.ends_with?(internal_domain) }
-      if ext_data || (external_onsite_visitors && !external_onsite_visitors.empty?)
+      if ext_data || (attending && !attending.empty?)
         meta = EventMetadata.new
         meta.system_id = sys.id.not_nil!
         meta.event_id = gevent.id
@@ -270,15 +242,38 @@ class Events < Application
 
         Log.info { "saving extension data for event #{gevent.id} in #{sys.id}" }
 
-        if external_onsite_visitors
-          # Create attendees
-          external_onsite_visitors.each do |attendee|
+        if attending
+          # Create guests
+          attending.each do |attendee|
             email = attendee.email.strip.downcase
-            attend = Attendee.new
-            attend.event_id = meta.id.not_nil!
-            attend.guest_id = email
-            attend.visit_expected = true
-            attend.save!
+            guest = if existing_guest = Guest.query.find({email: email})
+                      existing_guest.name = attendee.name if existing_guest.name != attendee.name
+                      existing_guest
+                    else
+                      Guest.new({
+                        email:          email,
+                        name:           attendee.name,
+                        preferred_name: attendee.preferred_name,
+                        phone:          attendee.phone,
+                        organisation:   attendee.organisation,
+                        photo:          attendee.photo,
+                        banned:         attendee.banned || false,
+                        dangerous:      attendee.dangerous || false,
+                      })
+                    end
+
+            if attendee_ext_data = attendee.extension_data
+              guest.extension_data = attendee_ext_data
+            end
+            guest.save!
+
+            # Create attendees
+            Attendee.create!({
+              event_id:       meta.id.not_nil!,
+              guest_id:       guest.id,
+              visit_expected: true,
+              checked_in:     false,
+            })
 
             spawn do
               guest = attend.guest
@@ -590,28 +585,29 @@ class Events < Application
           end
         end
 
-        # Save external guests into the database
         all_attendees = changes.attendees
         if all_attendees && !all_attendees.empty?
-          internal_domain = host.split("@")[1] || "unknown_domain"
           all_attendees.each do |attendee|
-            next if !attendee.visit_expected || attendee.email.ends_with?(internal_domain)
-
             email = attendee.email.strip.downcase
-            guest = Guest.find(email) || Guest.new
-            guest.email = email
-            guest.name ||= attendee.name
-            guest.preferred_name ||= attendee.preferred_name
-            guest.phone ||= attendee.phone
-            guest.organisation ||= attendee.organisation
-            guest.photo ||= attendee.photo
-            # guest.assistance_required ||= !!attendee.assistance_required
+            guest = if existing_guest = Guest.query.find({email: email})
+                      existing_guest.name = attendee.name if existing_guest.name != attendee.name
+                      existing_guest
+                    else
+                      Guest.new({
+                        email:          email,
+                        name:           attendee.name,
+                        preferred_name: attendee.preferred_name,
+                        phone:          attendee.phone,
+                        organisation:   attendee.organisation,
+                        photo:          attendee.photo,
+                        banned:         attendee.banned || false,
+                        dangerous:      attendee.dangerous || false,
+                      })
+                    end
 
-            if ext_data = attendee.extension_data
-              guest_data = guest.extension_data
-              ext_data.each { |key, value| guest_data[key] = value }
+            if attendee_ext_data = attendee.extension_data
+              guest.extension_data = attendee_ext_data
             end
-
             guest.save!
           end
         end
@@ -622,8 +618,6 @@ class Events < Application
           attending.each do |attendee|
             email = attendee.email.strip.downcase
             next unless attendee.visit_expected
-            next if email.ends_with?(internal_domain.not_nil!)
-
             was_attending = existing_lookup[email]?
             previously_visiting = was_attending.try &.visit_expected
 
@@ -656,7 +650,6 @@ class Events < Application
         elsif changing_room
           existing.each do |attend|
             next unless attend.visit_expected
-            next if attend.email.ends_with?(internal_domain.not_nil!)
             spawn do
               sys = system.not_nil!
               guest = attend.guest
