@@ -242,6 +242,7 @@ class Events < Application
 
         Log.info { "saving extension data for event #{gevent.id} in #{sys.id}" }
 
+        # Save all attendees into the database
         if attending
           # Create guests
           attending.each do |attendee|
@@ -575,9 +576,11 @@ class Events < Application
           end
         end
 
+        # Save all guests into the database
         all_attendees = changes.attendees
         if all_attendees && !all_attendees.empty?
           all_attendees.each do |attendee|
+            next if !attendee.visit_expected
             email = attendee.email.strip.downcase
             guest = Guest.find(email) || Guest.new
             guest.email = email
