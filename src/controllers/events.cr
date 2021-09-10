@@ -246,34 +246,24 @@ class Events < Application
           # Create guests
           attending.each do |attendee|
             email = attendee.email.strip.downcase
-            guest = if existing_guest = Guest.find(email)
-                      existing_guest.name = attendee.name if existing_guest.name != attendee.name
-                      existing_guest
-                    else
-                      Guest.new({
-                        email:          email,
-                        name:           attendee.name,
-                        preferred_name: attendee.preferred_name,
-                        phone:          attendee.phone,
-                        organisation:   attendee.organisation,
-                        photo:          attendee.photo,
-                        banned:         attendee.banned || false,
-                        dangerous:      attendee.dangerous || false,
-                      })
-                    end
+            guest = Guest.find(email) || Guest.new
+            guest.email = email
+            guest.name ||= attendee.name
+            guest.preferred_name ||= attendee.preferred_name
+            guest.phone ||= attendee.phone
+            guest.organisation ||= attendee.organisation
+            guest.photo ||= attendee.photo
 
             if attendee_ext_data = attendee.extension_data
               guest.extension_data = attendee_ext_data
             end
             guest.save!
 
-            # Create attendees
-            Attendee.create!({
-              event_id:       meta.id.not_nil!,
-              guest_id:       guest.id,
-              visit_expected: true,
-              checked_in:     false,
-            })
+            attend = Attendee.new
+            attend.event_id = meta.id.not_nil!
+            attend.guest_id = email
+            attend.visit_expected = true
+            attend.save!
 
             spawn do
               guest = attend.guest
@@ -589,22 +579,13 @@ class Events < Application
         if all_attendees && !all_attendees.empty?
           all_attendees.each do |attendee|
             email = attendee.email.strip.downcase
-            guest = if existing_guest = Guest.find(email)
-                      existing_guest.name = attendee.name if existing_guest.name != attendee.name
-                      existing_guest
-                    else
-                      Guest.new({
-                        email:          email,
-                        name:           attendee.name,
-                        preferred_name: attendee.preferred_name,
-                        phone:          attendee.phone,
-                        organisation:   attendee.organisation,
-                        photo:          attendee.photo,
-                        banned:         attendee.banned || false,
-                        dangerous:      attendee.dangerous || false,
-                      })
-                    end
-
+            guest = Guest.find(email) || Guest.new
+            guest.email = email
+            guest.name ||= attendee.name
+            guest.preferred_name ||= attendee.preferred_name
+            guest.phone ||= attendee.phone
+            guest.organisation ||= attendee.organisation
+            guest.photo ||= attendee.photo
             if attendee_ext_data = attendee.extension_data
               guest.extension_data = attendee_ext_data
             end
