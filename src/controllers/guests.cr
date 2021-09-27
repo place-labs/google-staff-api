@@ -8,7 +8,7 @@ class Guests < Application
   skip_action :check_jwt_scope, only: [:show, :update]
 
   def index
-    query = (query_params["q"]? || "").gsub(/[^\w\s]/, "").strip.downcase
+    query = (query_params["q"]? || "").gsub(/[^\w\s\@\-\.\~\_]/, "").strip.downcase
     starting = query_params["period_start"]?
     if starting
       period_start = Time.unix(starting.to_i64)
