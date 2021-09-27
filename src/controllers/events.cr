@@ -238,11 +238,11 @@ class Events < Application
           email = attendee.email.strip.downcase
           guest = Guest.find(email) || Guest.new
           guest.email = email
-          guest.name ||= attendee.name
-          guest.preferred_name ||= attendee.preferred_name
-          guest.phone ||= attendee.phone
-          guest.organisation ||= attendee.organisation
-          guest.photo ||= attendee.photo
+          guest.name = attendee.name
+          guest.preferred_name = attendee.preferred_name
+          guest.phone = attendee.phone
+          guest.organisation = attendee.organisation
+          guest.photo = attendee.photo
           # guest.assistance_required ||= !!attendee.assistance_required
 
           if ext_data = attendee.extension_data
@@ -600,11 +600,11 @@ class Events < Application
             email = attendee.email.strip.downcase
             guest = Guest.find(email) || Guest.new
             guest.email = email
-            guest.name ||= attendee.name
-            guest.preferred_name ||= attendee.preferred_name
-            guest.phone ||= attendee.phone
-            guest.organisation ||= attendee.organisation
-            guest.photo ||= attendee.photo
+            guest.name = attendee.name
+            guest.preferred_name = attendee.preferred_name
+            guest.phone = attendee.phone
+            guest.organisation = attendee.organisation
+            guest.photo = attendee.photo
             # guest.assistance_required ||= !!attendee.assistance_required
 
             if ext_data = attendee.extension_data
