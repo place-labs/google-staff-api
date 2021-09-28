@@ -144,9 +144,9 @@ class Events < Application
       system = placeos_client.systems.fetch(system_id)
       sys_email = system.email.presence.not_nil!
       # Exclude the placeos system.name so that Google will automatically use the room mailbox name.
-      room_mailbox = GuestDetails.new(sys_email, nil)  
+      room_mailbox = GuestDetails.new(sys_email, nil)
       room_mailbox.resource = true
-      attendees[sys_email] = room_mailbox 
+      attendees[sys_email] = room_mailbox
     end
 
     # Ensure the host is configured to be attending the meeting and has accepted the meeting
@@ -621,11 +621,12 @@ class Events < Application
           # Create attendees
           attending.each do |attendee|
             email = attendee.email.strip.downcase
-            next unless attendee.visit_expected
             next if email.ends_with?(internal_domain.not_nil!)
 
             was_attending = existing_lookup[email]?
             previously_visiting = was_attending.try &.visit_expected
+
+            next unless attendee.visit_expected || previously_visiting
 
             attend = was_attending || Attendee.new
             attend.event_id = meta.not_nil!.id.not_nil!
