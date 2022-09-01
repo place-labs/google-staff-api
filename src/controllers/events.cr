@@ -952,4 +952,81 @@ class Events < Application
     metadata = EventMetadata.find("#{system.id}-#{event.recurring_event_id}") if metadata.nil? && event.recurring_event_id
     render json: standard_event(cal_id, system, updated_event, metadata)
   end
+
+  put("/:id/metadata/:system_id", :update_metadata) do
+    update_metadata
+  end
+
+  patch("/:id/metadata/:system_id", :update_metadata) do
+    update_metadata merge: true
+  end
+
+  # ameba:disable Metrics/CyclomaticComplexity
+  protected def update_metadata(merge : Bool = false)
+    changes = JSON::Any.from_json(request.body.as(IO)).as_h
+    event_id = original_id = route_params["id"]
+    system_id = route_params["system_id"]
+
+    placeos_client = get_placeos_client
+
+    system = placeos_client.systems.fetch(system_id)
+    cal_id = system.email.presence
+    render(:not_found, text: "system does not have a resource email associated with it") unless cal_id
+
+    is_guest = user_token.scope.includes?("guest")
+    event = is_guest ? calendar_for.event(event_id, cal_id) : get_event(event_id, cal_id)
+    render(:not_found, text: "event not found on system calendar") unless event
+
+    # Guests can update extension_data to indicate their order
+    if is_guest
+      guest_event_id, guest_system_id = user_token.user.roles
+      head :forbidden unless merge && guest_event_id.in?({original_id, event_id}) && system_id == guest_system_id
+    else
+      attendees = event.attendees.try(&.map { |a| a.email.downcase }) || [] of String
+      user_email = user_token.user.email.downcase
+      head :forbidden unless is_support? || user_email.in?({event.organizer.try(&.email), event.creator.try(&.email)}) || user_email.in?(attendees)
+    end
+
+    # attempt to find the metadata
+    meta = EventMetadata.find("#{system_id}-#{event.id}")
+    if meta.nil? && event.recurring_event_id
+      if old_meta = EventMetadata.find("#{system_id}-#{event.recurring_event_id}")
+        EventMetadata.migrate_recurring_metadata(system.id, event, old_meta)
+      end
+    end
+    meta = meta || EventMetadata.new
+
+    meta.system_id = system.id.not_nil!
+    meta.event_id = event.id.not_nil!
+    meta.event_start = event.start.not_nil!.time.to_unix
+    meta.event_end = event.end.not_nil!.time.to_unix
+    meta.resource_calendar = system.not_nil!.email.not_nil!
+    meta.host_email = event.organizer.not_nil!.email.not_nil!
+
+    # Updating extension data by merging into existing.
+    if merge
+      data = meta.extension_data.as_h
+      changes.each { |key, value| data[key] = value }
+    else
+      data = changes
+    end
+
+    # Needed for clear to assign the updated json correctly
+    meta.extension_data = nil
+    meta.ext_data = data.to_json
+    meta.save!
+
+    spawn do
+      placeos_client.root.signal("staff/event/changed", {
+        action:    :update,
+        system_id: system.id,
+        event_id:  original_id,
+        host:      event.organizer.try(&.email) || event.creator.try(&.email),
+        resource:  system.email,
+        ext_data:  meta.ext_data,
+      })
+    end
+
+    render json: meta.ext_data
+  end
 end

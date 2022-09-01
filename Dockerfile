@@ -1,4 +1,4 @@
-FROM crystallang/crystal:1.0.0-alpine
+FROM crystallang/crystal:1.5.0-alpine
 ADD . /src
 WORKDIR /src
 

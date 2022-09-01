@@ -173,7 +173,7 @@ abstract class Application < ActionController::Base
   ###########################################################################
 
   # 400 if unable to parse some JSON passed by a client
-  rescue_from JSON::MappingError do |error|
+  rescue_from JSON::ParseException do |error|
     Log.debug { error.inspect_with_backtrace }
 
     if App.running_in_production?

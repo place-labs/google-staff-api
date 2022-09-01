@@ -6,3 +6,6 @@ dependencies:
   http-params-serializable:
     github: place-labs/http-params-serializable
     branch: chore/0.36.0
+  CrystalEmail:
+      git: https://git.sceptique.eu/Sceptique/CrystalEmail
+      branch: master
