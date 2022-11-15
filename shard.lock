@@ -7,15 +7,15 @@ shards:
 
   action-controller:
     git: https://github.com/spider-gazelle/action-controller.git
-    version: 5.3.9
+    version: 5.4.3
 
   active-model:
     git: https://github.com/spider-gazelle/active-model.git
-    version: 4.0.0
+    version: 4.2.3
 
   ameba:
     git: https://github.com/veelenga/ameba.git
-    version: 1.1.0
+    version: 1.3.0
 
   backtracer:
     git: https://github.com/sija/backtracer.cr.git
@@ -23,7 +23,7 @@ shards:
 
   bindata:
     git: https://github.com/spider-gazelle/bindata.git
-    version: 1.10.0
+    version: 1.11.1
 
   connect-proxy:
     git: https://github.com/spider-gazelle/connect-proxy.git
@@ -83,7 +83,7 @@ shards:
 
   json-schema:
     git: https://github.com/spider-gazelle/json-schema.git
-    version: 1.2.1
+    version: 1.3.0
 
   jwt:
     git: https://github.com/crystal-community/jwt.git
@@ -99,7 +99,7 @@ shards:
 
   neuroplastic: # Overridden
     git: https://github.com/place-labs/neuroplastic.git
-    version: 1.12.0
+    version: 1.12.2
 
   open_api:
     git: https://github.com/elbywan/open_api.cr.git
@@ -119,7 +119,7 @@ shards:
 
   opentelemetry-instrumentation:
     git: https://github.com/wyhaines/opentelemetry-instrumentation.cr.git
-    version: 0.5.0+git.commit.7d83b9a53c9540fbc159f06eeed5d4bdad5c4377
+    version: 0.5.1+git.commit.30000cdca2d17db6f42db2eafc49f109f57a5afc
 
   opentelemetry-sdk:
     git: https://github.com/wyhaines/opentelemetry-sdk.cr.git
@@ -147,7 +147,7 @@ shards:
 
   placeos-models:
     git: https://github.com/placeos/models.git
-    version: 8.12.0
+    version: 8.12.2
 
   promise:
     git: https://github.com/spider-gazelle/promise.git

@@ -15,6 +15,17 @@ module Utils::CurrentUser
   def authorize!
     return if @user_token
 
+    # check for X-API-Key use
+    if (token = request.headers["X-API-Key"]?)
+      begin
+        @user_token = user_tok = get_placeos_client.apikeys.inspect_jwt
+        return user_tok
+      rescue e
+        Log.warn(exception: e) { "bad or unknown X-API-Key" }
+        raise Error::Unauthorized.new "unknown X-API-Key"
+      end
+    end
+
     token = acquire_token
 
     # Request must have a bearer token
