@@ -117,7 +117,7 @@ class Guests < Application
   end
 
   def show
-    if user_token.scope.includes?("guest")
+    if user_token.guest_scope?
       head :forbidden unless guest.id == user_token.id
     end
 
@@ -127,7 +127,7 @@ class Guests < Application
   end
 
   def update
-    if user_token.scope.includes?("guest")
+    if user_token.guest_scope?
       head :forbidden unless guest.id == user_token.id
     end
 

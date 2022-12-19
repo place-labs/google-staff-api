@@ -343,7 +343,7 @@ class Events < Application
     changes = UpdateCalEvent.from_json(request.body.as(IO))
 
     # Guests can update extension_data to indicate their order
-    if user_token.scope.includes?("guest")
+    if user_token.guest_scope?
       guest_event_id, guest_system_id = user_token.user.roles
 
       sys_id_param = query_params["system_id"]?
@@ -368,7 +368,7 @@ class Events < Application
              end
 
     # If a recurring meeting then migrate metadata before making changes
-    is_guest = user_token.scope.includes?("guest")
+    is_guest = user_token.guest_scope?
     event = is_guest ? calendar_for.event(event_id, cal_id) : get_event(event_id, cal_id)
     head(:not_found) unless event
 
@@ -704,7 +704,7 @@ class Events < Application
     event_id = route_params["id"]
 
     # Guest access
-    if user_token.scope.includes?("guest")
+    if user_token.guest_scope?
       guest_event_id, system_id = user_token.user.roles
       guest_email = user_token.user.email.downcase
 
@@ -850,7 +850,7 @@ class Events < Application
     event_id = route_params["id"]
     guest_email = URI.decode(route_params["guest_id"]).downcase
 
-    is_guest_scope = user_token.scope.includes?("guest")
+    is_guest_scope = user_token.guest_scope?
     if is_guest_scope
       guest_event_id, system_id = user_token.user.roles
       guest_token_email = user_token.user.email.downcase
@@ -973,7 +973,7 @@ class Events < Application
     cal_id = system.email.presence
     render(:not_found, text: "system does not have a resource email associated with it") unless cal_id
 
-    is_guest = user_token.scope.includes?("guest")
+    is_guest = user_token.guest_scope?
     event = is_guest ? calendar_for.event(event_id, cal_id) : get_event(event_id, cal_id)
     render(:not_found, text: "event not found on system calendar") unless event
 
