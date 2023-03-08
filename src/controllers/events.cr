@@ -748,7 +748,22 @@ class Events < Application
       event = get_event(event_id, user_cal)
       head(:not_found) unless event
 
-      render json: standard_event(user_cal, nil, event, nil)
+      parent_meta = false
+      if resource = event.attendees.try(&.find(&.resource))
+        system = begin
+          get_placeos_client.systems.fetch(resource.email)
+        rescue
+          nil
+        end
+
+        metadata = EventMetadata.where(event_id: event_id).limit(1).map { |at| at }.first?
+        if event.recurring_event_id && !metadata
+          parent_meta = true
+          metadata = EventMetadata.where(event_id: event.recurring_event_id).limit(1).map { |at| at }.first?
+        end
+      end
+
+      render json: standard_event(user_cal, system, event, metadata, parent_meta)
     elsif system_id = query_params["system_id"]?
       # Need to grab the calendar associated with this system
       system = get_placeos_client.systems.fetch(system_id)
