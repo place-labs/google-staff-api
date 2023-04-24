@@ -2,7 +2,7 @@ class Bookings < Application
   base "/api/staff/v1/bookings"
 
   before_action :find_booking, only: [:show, :update, :update_alt, :destroy, :check_in, :approve, :reject]
-  before_action :check_access, only: [:update, :update_alt, :destroy, :check_in]
+  before_action :confirm_access, only: [:update, :update_alt, :destroy, :check_in]
   getter booking : Booking { find_booking }
 
   def index
@@ -191,11 +191,13 @@ class Bookings < Application
     Booking.find!(route_params["id"].to_i64)
   end
 
-  def check_access
+  def confirm_access
     user = user_token
-    if booking.user_id != user.id
-      head :forbidden unless user.is_admin? || user.is_support?
-    end
+    if (booking && !((booking.user_id == user.id) || (booking.user_email == user_token.user.email.downcase))) &&
+      !(user.is_admin? || user.is_support?) &&
+      !check_access(user.user.roles, booking.zones || [] of String).none?
+     head :forbidden
+   end
   end
 
   def update_booking(booking, signal = "changed")

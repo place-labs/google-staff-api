@@ -134,27 +134,23 @@ module Utils::PlaceOSHelpers
 
     # Returns {permission_found, access_level}
     def has_access?(groups : Array(String)) : Tuple(Bool, Access)
-      if none = deny
-        return {true, Access::None} unless (none & groups).empty?
+      case
+      when (none = deny) && !(none & groups).empty?
+        {false, Access::None}
+      when (can_manage = manage) && !(can_manage & groups).empty?
+        {true, Access::Manage}
+      when (can_admin = admin) && !(can_admin & groups).empty?
+        {true, Access::Admin}
+      else
+        {false, Access::None}
       end
-
-      if can_manage = manage
-        return {true, Access::Manage} unless (can_manage & groups).empty?
-      end
-
-      if can_admin = admin
-        return {true, Access::Admin} unless (can_admin & groups).empty?
-      end
-
-      {false, Access::None}
     end
   end
 
   # https://docs.google.com/document/d/1OaZljpjLVueFitmFWx8xy8BT8rA2lITyPsIvSYyNNW8/edit#
   # See the section on user-permissions
-  def check_access(groups : Array(String), system)
+  def check_access(groups : Array(String), check : Array(String))
     client = get_placeos_client.metadata
-    check = [system.id] + system.zones
     access = Access::None
     check.each do |area_id|
       if metadata = client.fetch(area_id, "permissions")["permissions"]?.try(&.details)
