@@ -55,6 +55,13 @@ class Events < Application
     # Don't perform the query if there are no calendar entries
     if !metadata_ids.empty?
       EventMetadata.where(:id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
+    else
+      results.each { |(calendar_id, system, event)|
+        metadata_ids << event.id
+        metadata_ids << event.recurring_event_id.as(String) if event.recurring_event_id && event.id != event.recurring_event_id
+      }
+      metadata_ids.uniq!
+      EventMetadata.where(:event_id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
     end
 
     # return array of standardised events

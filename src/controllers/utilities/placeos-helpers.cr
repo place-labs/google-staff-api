@@ -150,14 +150,18 @@ module Utils::PlaceOSHelpers
   # https://docs.google.com/document/d/1OaZljpjLVueFitmFWx8xy8BT8rA2lITyPsIvSYyNNW8/edit#
   # See the section on user-permissions
   def check_access(groups : Array(String), check : Array(String))
+    Log.info { "checking groups #{groups} have access in #{check}" }
     client = get_placeos_client.metadata
     access = Access::None
     check.each do |area_id|
+      Log.info { " --> checking permissions in #{area_id}" }
       if metadata = client.fetch(area_id, "permissions")["permissions"]?.try(&.details)
         continue, access = PermissionsMeta.from_json(metadata.to_json).has_access?(groups)
+        Log.info { " --! found permissions: #{metadata} - continue: #{continue}, access: #{access}" }
         break unless continue
       end
     end
+    Log.info { " <-- final permission: #{access}" }
     access
   end
 end

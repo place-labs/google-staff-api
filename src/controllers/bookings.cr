@@ -193,11 +193,12 @@ class Bookings < Application
 
   def confirm_access
     user = user_token
-    if (booking && !((booking.user_id == user.id) || (booking.user_email == user_token.user.email.downcase))) &&
-      !(user.is_admin? || user.is_support?) &&
-      !check_access(user.user.roles, booking.zones || [] of String).none?
-     head :forbidden
-   end
+    the_booking = booking
+    return unless the_booking
+    return if (booking.user_id == user.id) || (booking.user_email.downcase == user_token.user.email.downcase)
+    return if user.is_admin? || user.is_support?
+    return unless check_access(user.user.roles, booking.zones || [] of String).none?
+    head :forbidden
   end
 
   def update_booking(booking, signal = "changed")
