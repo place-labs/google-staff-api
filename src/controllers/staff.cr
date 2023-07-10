@@ -22,6 +22,8 @@ class Staff < Application
                       App::DIR_SERVICE_PASS,
                       App::DIR_SERVICE_CLIENT_ID,
                       App::DIR_SERVICE_SECRET,
+                      host_header: URI.parse(App::PLACE_URI).host,
+                      insecure: true,
                     )]
                   else
                     Array(PlaceOS::Client).new
@@ -31,7 +33,6 @@ class Staff < Application
     @@rate_limit.receive
 
     client = @@dir_service[0]
-    # TODO:: expires don't grab this every request, cache until almost expired
     client.users.resource_token.token
   end
 

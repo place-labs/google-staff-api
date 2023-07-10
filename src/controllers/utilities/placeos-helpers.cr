@@ -40,10 +40,21 @@ module Utils::PlaceOSHelpers
   @client : PlaceOS::Client? = nil
 
   def get_placeos_client : PlaceOS::Client
-    @client ||= PlaceOS::Client.new(
-      PLACE_URI,
-      token: OAuth2::AccessToken::Bearer.new(acquire_token.not_nil!, nil)
-    )
+    @client ||= if key = request.headers["X-API-Key"]?
+      PlaceOS::Client.new(
+        PLACE_URI,
+        host_header: request.headers["Host"]?,
+        insecure: true,
+        x_api_key: key
+      )
+    else
+      PlaceOS::Client.new(
+        PLACE_URI,
+        token: OAuth2::AccessToken::Bearer.new(acquire_token.not_nil!, nil),
+        host_header: request.headers["Host"]?,
+        insecure: true
+      )
+    end
   end
 
   class CalendarSelection < Params
