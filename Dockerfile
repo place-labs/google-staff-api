@@ -32,7 +32,7 @@ RUN adduser \
 RUN shards install --production --ignore-crystal-version
 # Build App
 RUN PLACE_COMMIT=$PLACE_COMMIT \
-    crystal build --release --error-trace src/staff-api.cr -o staff-api
+    crystal build --error-trace src/staff-api.cr -o staff-api
 
 # Extract dependencies
 RUN ldd staff-api | tr -s '[:blank:]' '\n' | grep '^/' | \

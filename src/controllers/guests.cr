@@ -80,6 +80,8 @@ class Guests < Application
 
       render(json: [] of Nil) if attendees.empty?
 
+      metadata = EventMetadata.where(:id, :in, metadata_ids.to_a).limit(1).map { |at| at }.first?
+
       # Grab as much information about the guests as possible
       guests = {} of String => Guest
       Guest.where(:email, :in, attendees.keys).each { |guest| guests[guest.email.not_nil!] = guest }
@@ -90,18 +92,19 @@ class Guests < Application
         if meet = meeting_lookup[visitor.event_id]?
           calendar_id, system, event = meet
           include_meeting = {
-            id:          event.id,
-            status:      event.status,
-            calendar:    calendar_id,
-            title:       event.summary,
-            host:        event.organizer.try &.email,
-            creator:     event.creator.try &.email,
-            private:     event.visibility.in?({"private", "confidential"}),
-            event_start: event.start.time.to_unix,
-            event_end:   event.end.try { |time| (time.date_time || time.date).try &.to_unix },
-            timezone:    event.start.time_zone,
-            all_day:     !!event.start.date,
-            system:      system,
+            id:             event.id,
+            status:         event.status,
+            calendar:       calendar_id,
+            title:          event.summary,
+            host:           event.organizer.try &.email,
+            creator:        event.creator.try &.email,
+            private:        event.visibility.in?({"private", "confidential"}),
+            event_start:    event.start.time.to_unix,
+            event_end:      event.end.try { |time| (time.date_time || time.date).try &.to_unix },
+            timezone:       event.start.time_zone,
+            all_day:        !!event.start.date,
+            system:         system,
+            extension_data: metadata.try(&.extension_data),
           }
         end
         attending_guest(visitor, guests[email]?, meeting_details: include_meeting)
