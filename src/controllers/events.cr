@@ -1027,14 +1027,14 @@ class Events < Application
 
     # Updating extension data by merging into existing.
     if merge
-      data = meta.extension_data.as_h
+      data = JSON.parse(meta.ext_data || "{}").as_h
       changes.each { |key, value| data[key] = value }
     else
       data = changes
     end
 
     # Needed for clear to assign the updated json correctly
-    meta.extension_data = nil
+    meta.extension_data = JSON.parse(data.to_json)
     meta.ext_data = data.to_json
     meta.save!
 
