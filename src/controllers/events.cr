@@ -61,7 +61,7 @@ class Events < Application
         metadata_ids << event.recurring_event_id.as(String) if event.recurring_event_id && event.id != event.recurring_event_id
       }
       metadata_ids.uniq!
-      EventMetadata.where(:event_id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta }
+      EventMetadata.where(:event_id, :in, metadata_ids).each { |meta| metadatas[meta.event_id] = meta } unless metadata_ids.empty?
     end
 
     # return array of standardised events
